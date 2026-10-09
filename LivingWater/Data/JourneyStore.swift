@@ -19,9 +19,35 @@ final class JourneyStore {
     private let storageKey = "journey.savedBottles"
 
     private init() {
+        #if DEBUG
+        // For testing: launch with "-journeyPreview LW-MW-0001,LW-ET-0001" to
+        // see a journey with those bottles, without saving anything.
+        if let codes = UserDefaults.standard.string(forKey: "journeyPreview") {
+            bottles = codes.split(separator: ",").map { SavedBottle(code: String($0), savedAt: Date()) }
+            return
+        }
+        #endif
         guard let data = UserDefaults.standard.data(forKey: storageKey),
               let saved = try? JSONDecoder().decode([SavedBottle].self, from: data) else { return }
         bottles = saved
+    }
+
+    /// The communities these bottles supported, each one once, oldest first.
+    var communities: [Community] {
+        var seen = Set<String>()
+        return bottles
+            .compactMap { DataStore.shared.community(forBottleCode: $0.code) }
+            .filter { seen.insert($0.id).inserted }
+    }
+
+    /// How far this person has come on what a personal milestone counts.
+    func value(for metric: Milestone.Metric) -> Int {
+        switch metric {
+        case .bottlesScanned: bottles.count
+        case .communities: communities.count
+        case .partners: Set(communities.map(\.partnerId)).count
+        case .peopleServed: communities.reduce(0) { $0 + $1.peopleServed }
+        }
     }
 
     func isSaved(_ code: String) -> Bool {

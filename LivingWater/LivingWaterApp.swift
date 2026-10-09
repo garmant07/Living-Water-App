@@ -18,6 +18,9 @@ struct LivingWaterApp: App {
                 Tab("Scan", systemImage: "qrcode.viewfinder", value: "scan") {
                     ScanView(goToHub: { tab = "hub" })
                 }
+                Tab("Journey", systemImage: "sparkles", value: "journey") {
+                    JourneyView(goToScan: { tab = "scan" })
+                }
             }
             .tint(Theme.brand)
             // The whole app is white text on blue, so system bars use their dark look.

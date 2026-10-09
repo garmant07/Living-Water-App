@@ -170,13 +170,14 @@ struct BottleView: View {
 private struct MiniMap: View {
     let community: Community
 
+    @State private var position: MapCameraPosition = .automatic
+
+    private var camera: MapCamera {
+        MapCamera(centerCoordinate: community.coordinate, distance: 9_000_000)
+    }
+
     var body: some View {
-        Map(
-            initialPosition: .camera(
-                MapCamera(centerCoordinate: community.coordinate, distance: 9_000_000)
-            ),
-            interactionModes: []
-        ) {
+        Map(position: $position, interactionModes: []) {
             Annotation(community.name, coordinate: community.coordinate) {
                 GlowPoint(peopleServed: community.peopleServed, isSelected: true)
             }
@@ -190,6 +191,13 @@ private struct MiniMap: View {
         }
         .frame(height: 180)
         .clipShape(RoundedRectangle(cornerRadius: 20))
+        .task {
+            position = .camera(camera)
+            // Apple's map only draws the light once the view has moved,
+            // so settle it with a tiny move.
+            try? await Task.sleep(for: .seconds(1))
+            position = .camera(camera.nudged)
+        }
         .accessibilityElement()
         .accessibilityLabel("Map showing \(community.name) in \(community.country)")
     }

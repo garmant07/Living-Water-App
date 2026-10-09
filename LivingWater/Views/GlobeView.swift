@@ -99,6 +99,15 @@ struct GlobeView: View {
                 select(community)
             }
         }
+        .task {
+            // With Reduce Motion on the globe never turns, so give it the
+            // one small move the lights need in order to appear.
+            guard reduceMotion else { return }
+            try? await Task.sleep(for: .seconds(1))
+            if selected == nil, !position.positionedByUser {
+                position = .camera(camera.nudged)
+            }
+        }
         .onAppear {
             #if DEBUG
             // For testing: launch with "-previewCommunity wm-malawi-1" to open on a card,
@@ -199,6 +208,14 @@ struct GlobeView: View {
 extension Community {
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
+extension MapCamera {
+    /// The same view moved a hair's width. Apple's map only draws custom
+    /// points once the view has moved, so still maps use this to settle.
+    var nudged: MapCamera {
+        MapCamera(centerCoordinate: centerCoordinate, distance: distance * 1.02)
     }
 }
 
