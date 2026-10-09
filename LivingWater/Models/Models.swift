@@ -179,3 +179,16 @@ struct LevelProgress {
     /// How full the thing being filled is, 0 to 1.
     let fill: Double
 }
+
+/// A line shown at the top of the home page: a Bible verse, a slogan, or a
+/// mission statement. A different one appears each time the page is opened.
+struct HomeMessage: Codable, Hashable {
+    enum Kind: String, Codable {
+        case scripture, slogan, mission
+    }
+
+    let kind: Kind
+    let text: String
+    /// Where a verse comes from, e.g. "John 4:14 (KJV)". Left out for slogans.
+    let reference: String?
+}

@@ -8,7 +8,12 @@ struct HomeView: View {
     @Environment(Router.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var camera = GlobeCamera(longitude: 25, latitude: 8)
+    /// The verse, slogan or mission statement showing right now.
+    @State private var message: HomeMessage?
+    @State private var messageChangedAt = Date.distantPast
 
     private let store = DataStore.shared
     private let journey = JourneyStore.shared
@@ -31,8 +36,10 @@ struct HomeView: View {
                     .padding(.horizontal, 16)
                     .accessibilityAddTraits(.isHeader)
 
+                messageArea
+
                 earth
-                    .frame(height: geometry.size.height * 0.46)
+                    .frame(height: geometry.size.height * 0.42)
 
                 HStack(alignment: .top, spacing: 12) {
                     hubDoor
@@ -52,6 +59,14 @@ struct HomeView: View {
         }
         .background(Theme.background)
         .toolbar(.hidden, for: .navigationBar)
+        // A fresh message each time the home page is returned to...
+        .onAppear(perform: showNextMessage)
+        // ...and each time the app is opened again.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active, router.path.isEmpty {
+                showNextMessage()
+            }
+        }
         .onReceive(clock) { _ in
             // The Earth turns slowly unless the phone asks for less motion,
             // and only while the home page is the one showing.
@@ -60,22 +75,71 @@ struct HomeView: View {
         }
     }
 
+    // MARK: The message under the title
+
+    private var messageArea: some View {
+        VStack(spacing: 4) {
+            if let message {
+                Text(message.kind == .scripture ? "\u{201C}\(message.text)\u{201D}" : message.text)
+                    .font(message.kind == .scripture ? .callout.italic() : .callout.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.75)
+                if let reference = message.reference {
+                    Text(reference)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                }
+            }
+        }
+        .padding(.horizontal, 24)
+        // A fixed height, so the page doesn't shift when the message changes.
+        .frame(maxWidth: .infinity)
+        .frame(height: 84)
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Picks a different message from the one showing.
+    private func showNextMessage() {
+        // Opening the app triggers this twice in a row; once is enough.
+        guard Date().timeIntervalSince(messageChangedAt) > 1 else { return }
+        let others = store.homeMessages.filter { $0 != message }
+        message = others.randomElement() ?? store.homeMessages.first
+        messageChangedAt = Date()
+    }
+
+    // MARK: The Earth
+
     /// The Earth is one big button here. Spinning and tapping dots happen on the globe page.
     private var earth: some View {
-        FlatGlobe(
-            communities: store.communities,
-            interactive: false,
-            camera: .constant(camera)
-        )
-        .overlay {
-            Button {
-                router.open(.globe)
-            } label: {
-                Color.clear.contentShape(Circle())
+        GeometryReader { geometry in
+            // Leave a strip below the globe for the curved "Click me".
+            let side = max(min(geometry.size.width, geometry.size.height - 30), 1)
+            let center = CGPoint(x: geometry.size.width / 2, y: side / 2)
+
+            ZStack(alignment: .top) {
+                FlatGlobe(
+                    communities: store.communities,
+                    interactive: false,
+                    camera: .constant(camera)
+                )
+                .frame(width: side, height: side)
+                .frame(maxWidth: .infinity)
+
+                ArcLabel(text: "Click me", center: center, radius: side / 2 + 12)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+
+                Button {
+                    router.open(.globe)
+                } label: {
+                    Color.clear.contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("The Earth, showing \(store.communities.count) communities")
+                .accessibilityHint("Opens the globe")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("The Earth, showing \(store.communities.count) communities")
-            .accessibilityHint("Opens the globe")
         }
     }
 
@@ -161,6 +225,40 @@ struct HomeView: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityHint("Opens \(title)")
+    }
+}
+
+// Words that curve along the bottom of a circle, like a smile.
+private struct ArcLabel: View {
+    let text: String
+    let center: CGPoint
+    /// How far the middle of the letters sits from the circle's center.
+    let radius: CGFloat
+
+    var body: some View {
+        Canvas { context, _ in
+            let letters = text.map {
+                context.resolve(
+                    Text(String($0))
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Theme.foreground)
+                )
+            }
+            let widths = letters.map { $0.measure(in: CGSize(width: 200, height: 200)).width + 2.5 }
+            let total = widths.reduce(0, +)
+
+            // Start left of the bottom point and walk right, one letter at a time.
+            var angle = Double.pi / 2 + total / (2 * radius)
+            for (letter, width) in zip(letters, widths) {
+                let middle = angle - (width / 2) / radius
+                var spot = context
+                spot.translateBy(x: center.x + radius * cos(middle), y: center.y + radius * sin(middle))
+                // Tip each letter so its top points at the middle of the globe.
+                spot.rotate(by: .radians(middle - .pi / 2))
+                spot.draw(letter, at: .zero, anchor: .center)
+                angle -= width / radius
+            }
+        }
     }
 }
 

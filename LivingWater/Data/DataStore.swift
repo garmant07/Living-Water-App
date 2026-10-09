@@ -44,6 +44,8 @@ final class DataStore {
     private let allMilestones: [Milestone]
     /// The Personal Journey levels, smallest first.
     let levels: [JourneyLevel]
+    /// The verses, slogans and mission statements that take turns on the home page.
+    let homeMessages: [HomeMessage]
 
     private init() {
         partners = Self.load("partners")
@@ -52,6 +54,7 @@ final class DataStore {
         bottles = Self.load("bottles")
         allMilestones = Self.load("milestones")
         company = Self.load("company")
+        homeMessages = Self.load("messages")
         let loadedLevels: [JourneyLevel] = Self.load("levels")
         levels = loadedLevels.sorted { $0.liters < $1.liters }
     }
