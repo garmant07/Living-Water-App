@@ -22,6 +22,11 @@ struct GlobeView: View {
     private let store = DataStore.shared
     private let clock = Timer.publish(every: 1.0 / 30, on: .main, in: .common).autoconnect()
     private static var didPreview = false
+    /// The last invitation shown, so the next one is different.
+    private static var lastMessage: String?
+
+    /// The invitation showing above the globe.
+    @State private var message = ""
 
     /// The whole Earth, centered on Africa.
     private static let startCamera = GlobeCamera(longitude: 25, latitude: 8)
@@ -67,6 +72,11 @@ struct GlobeView: View {
             }
         }
         .onAppear {
+            // A different invitation each time the page is opened.
+            let others = store.globeMessages.filter { $0 != Self.lastMessage }
+            message = others.randomElement() ?? store.globeMessages.first ?? ""
+            Self.lastMessage = message
+
             #if DEBUG
             // For testing: launch with "-previewCommunity wm-malawi-1" to open on a card,
             // or "-previewStory wm-malawi-1" to open on a story page.
@@ -88,6 +98,18 @@ struct GlobeView: View {
 
     private var globePage: some View {
         VStack(spacing: 0) {
+            Text(message)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Theme.foreground)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, 24)
+                // A fixed height, so the globe doesn't shift when the words change.
+                .frame(maxWidth: .infinity)
+                .frame(height: 64)
+                .accessibilityAddTraits(.isHeader)
+
             FlatGlobe(
                 communities: store.communities,
                 selectedID: selected?.id,
