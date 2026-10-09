@@ -179,52 +179,60 @@ struct GlobeView: View {
         let totals = store.totals
 
         return doorCard(
-            icon: "drop",
             title: "Community Hub",
             headline: "\(Format.number(totals.peopleServed)) people reached",
             detail: "\(Format.currency(totals.progress.remaining)) still to go",
             showsSample: totals.includesSampleData,
             action: goToHub
-        )
+        ) {
+            Image(systemName: "drop")
+                .font(.title)
+                .foregroundStyle(Theme.foreground)
+                .frame(height: 44)
+        }
     }
 
     private var journeyDoor: some View {
-        let count = journey.bottles.count
+        let progress = store.levelProgress(bottles: journey.bottles.count)
 
         return doorCard(
-            icon: "sparkles",
-            title: "Your journey",
-            headline: count == 0 ? "No bottles yet" : "\(count) \(count == 1 ? "bottle" : "bottles") saved",
-            detail: count == 0 ? "Scan one to begin" : "\(journey.communities.count) \(journey.communities.count == 1 ? "community" : "communities") reached",
+            title: "Personal Journey",
+            headline: progress.current.map { "Level \($0.level) · \($0.name)" } ?? "Level 0",
+            detail: progress.bottles == 0
+                ? "Scan a bottle to fill your glass"
+                : "\(Format.number(progress.bottles)) \(progress.bottles == 1 ? "bottle" : "bottles") · \(Format.volume(progress.liters))",
             showsSample: false,
             action: goToJourney
-        )
+        ) {
+            // The container being filled right now.
+            VesselView(kind: (progress.next ?? progress.current)?.vessel ?? .glass, fill: progress.fill, lineWidth: 2.5)
+                .frame(width: 44, height: 44)
+        }
     }
 
-    private func doorCard(
-        icon: String,
+    /// A card below the globe: the title on top, then its picture, then two lines.
+    private func doorCard<Picture: View>(
         title: String,
         headline: String,
         detail: String,
         showsSample: Bool,
-        action: @escaping () -> Void
+        action: @escaping () -> Void,
+        @ViewBuilder picture: () -> Picture
     ) -> some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Image(systemName: icon)
-                        .font(.title3)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(title)
+                        .font(.headline)
                         .foregroundStyle(Theme.foreground)
-                        .accessibilityHidden(true)
-                    Spacer()
+                    Spacer(minLength: 4)
                     Image(systemName: "chevron.right")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.foreground)
                         .accessibilityHidden(true)
                 }
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(Theme.foreground)
+                picture()
+                    .accessibilityHidden(true)
                 Text(headline)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.foreground)

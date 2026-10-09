@@ -42,6 +42,8 @@ final class DataStore {
     private let allStories: [StoryUpdate]
     private let bottles: [BottleCode]
     private let allMilestones: [Milestone]
+    /// The 25 Personal Journey levels, smallest first.
+    let levels: [JourneyLevel]
 
     private init() {
         partners = Self.load("partners")
@@ -50,6 +52,8 @@ final class DataStore {
         bottles = Self.load("bottles")
         allMilestones = Self.load("milestones")
         company = Self.load("company")
+        let loadedLevels: [JourneyLevel] = Self.load("levels")
+        levels = loadedLevels.sorted { $0.liters < $1.liters }
     }
 
     /// Reads one JSON file from the app. A typo in a data file stops the app
@@ -173,6 +177,28 @@ final class DataStore {
         bottle(code: code).flatMap { community(id: $0.communityId) }
     }
 
+    // MARK: Personal Journey levels
+
+    /// How many scanned bottles it takes to fill a level.
+    func bottlesNeeded(for level: JourneyLevel) -> Int {
+        max(Int((level.liters / company.litersPerBottle).rounded(.up)), 1)
+    }
+
+    /// Works out the level reached, and the one being filled, for a number of bottles.
+    func levelProgress(bottles: Int) -> LevelProgress {
+        let liters = Double(bottles) * company.litersPerBottle
+        let current = levels.last { bottlesNeeded(for: $0) <= bottles }
+        let next = levels.first { bottlesNeeded(for: $0) > bottles }
+        return LevelProgress(
+            bottles: bottles,
+            liters: liters,
+            current: current,
+            next: next,
+            bottlesToNext: next.map { bottlesNeeded(for: $0) - bottles } ?? 0,
+            fill: next.map { min(liters / $0.liters, 1) } ?? 1
+        )
+    }
+
     // MARK: Milestones
 
     func milestones(ofType type: Milestone.Kind? = nil) -> [Milestone] {
@@ -214,6 +240,26 @@ enum Format {
         let rounded = Int((amount / step).rounded() * step)
         let unit = usesMiles ? (rounded == 1 ? "mile" : "miles") : (rounded == 1 ? "kilometer" : "kilometers")
         return "\(number(rounded)) \(unit)"
+    }
+
+    /// 150 litres -> "40 gallons" or "150 litres", whichever the phone's
+    /// region uses. Small amounts read in fluid ounces or millilitres.
+    static func volume(_ liters: Double) -> String {
+        func tidy(_ amount: Double) -> String {
+            // Two meaningful digits is plenty: 39.6 -> 40, 660,430 -> 660,000.
+            guard amount >= 100 else {
+                return amount < 10 && amount != amount.rounded()
+                    ? amount.formatted(.number.precision(.fractionLength(1)))
+                    : number(Int(amount.rounded()))
+            }
+            let step = pow(10, (log10(amount)).rounded(.down) - 1)
+            return number(Int((amount / step).rounded() * step))
+        }
+        if Locale.current.measurementSystem == .metric {
+            return liters < 1 ? "\(tidy(liters * 1000)) ml" : "\(tidy(liters)) \(liters == 1 ? "litre" : "litres")"
+        }
+        let gallons = liters / 3.785411784
+        return gallons < 1 ? "\(tidy(liters * 33.8140227)) fl oz" : "\(tidy(gallons)) \(tidy(gallons) == "1" ? "gallon" : "gallons")"
     }
 
     /// "2026-10" -> "October 2026"

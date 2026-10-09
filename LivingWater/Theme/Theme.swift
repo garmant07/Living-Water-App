@@ -31,6 +31,8 @@ enum Theme {
     /// The globe is flat color with no shading: one blue for sea, one for land
     static let globeSea = Color(hex: 0x4A84C0)
     static let globeLand = Color(hex: 0x7AAEE0)
+    /// The water inside the Personal Journey's glasses, tubs and pools
+    static let water = Color(hex: 0xA9D2F5)
     /// Coastlines and the edge of the globe
     static let globeOutline = Color.white
     /// The "still to do" part of a progress bar

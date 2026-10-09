@@ -1,5 +1,6 @@
 {
   "bottlesSold": 52000,
   "asOf": "2026-10",
-  "isSample": true
+  "isSample": true,
+  "litersPerBottle": 0.5
 }

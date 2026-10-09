@@ -139,6 +139,41 @@ struct Milestone: Codable, Identifiable, Hashable {
 /// Company-wide figures that don't belong to any one project.
 struct CompanyTotals: Codable, Hashable {
     let bottlesSold: Int
+    /// How much water one scanned bottle counts for on the Personal Journey.
+    /// PLACEHOLDER: 0.5 is the water inside a half-litre bottle.
+    let litersPerBottle: Double
     let asOf: String
     let isSample: Bool
+}
+
+/// The simple outline a level is drawn with.
+enum VesselKind: String, Codable {
+    case glass, jug, bucket, tub, tank, pool
+}
+
+/// One step on the Personal Journey, from a glass up to an Olympic pool.
+struct JourneyLevel: Codable, Identifiable, Hashable {
+    let level: Int
+    let name: String
+    /// How the level reads inside a sentence, e.g. "a bathtub".
+    let short: String
+    /// How much water fills it.
+    let liters: Double
+    let vessel: VesselKind
+    let note: String
+
+    var id: Int { level }
+}
+
+/// Where someone stands on the Personal Journey for a number of bottles.
+struct LevelProgress {
+    let bottles: Int
+    let liters: Double
+    /// The biggest thing filled so far. nil before the first bottle.
+    let current: JourneyLevel?
+    /// The thing being filled now. nil once the Olympic pool is full.
+    let next: JourneyLevel?
+    let bottlesToNext: Int
+    /// How full the thing being filled is, 0 to 1.
+    let fill: Double
 }

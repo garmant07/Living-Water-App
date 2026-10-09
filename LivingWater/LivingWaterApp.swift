@@ -18,7 +18,7 @@ struct LivingWaterApp: App {
                 Tab("Scan", systemImage: "qrcode.viewfinder", value: "scan") {
                     ScanView(goToHub: { tab = "hub" })
                 }
-                Tab("Journey", systemImage: "sparkles", value: "journey") {
+                Tab("Journey", systemImage: "drop.circle", value: "journey") {
                     JourneyView(goToScan: { tab = "scan" })
                 }
             }

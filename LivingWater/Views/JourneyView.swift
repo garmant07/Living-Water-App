@@ -15,9 +15,11 @@ struct JourneyView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
+            ScrollViewReader { scroller in
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
                     header
+                    JourneyLevelsView(bottles: journey.bottles.count)
                     if journey.bottles.isEmpty {
                         emptyState
                     } else {
@@ -31,6 +33,15 @@ struct JourneyView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 24)
+            }
+            .onAppear {
+                #if DEBUG
+                // For testing: launch with "-journeySection ladder" to jump to the levels grid.
+                if let section = UserDefaults.standard.string(forKey: "journeySection") {
+                    scroller.scrollTo(section, anchor: .top)
+                }
+                #endif
+            }
             }
             .background(Theme.background)
             .toolbar(.hidden, for: .navigationBar)
@@ -58,11 +69,11 @@ struct JourneyView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Your journey")
+            Text("Personal Journey")
                 .font(.largeTitle.weight(.semibold))
                 .foregroundStyle(Theme.foreground)
                 .accessibilityAddTraits(.isHeader)
-            Text("The places your bottles have reached.")
+            Text("The water you've given, and the places it has reached.")
                 .font(.title3)
                 .foregroundStyle(Theme.muted)
         }
