@@ -28,14 +28,14 @@ struct HomeView: View {
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Theme.glow, Theme.accent, Theme.brand, Theme.brandStrong],
+                        colors: [.white, Theme.glow, Theme.accent],
                         center: UnitPoint(x: 0.35, y: 0.3),
                         startRadius: 0,
                         endRadius: 130
                     )
                 )
                 .frame(width: 160, height: 160)
-                .shadow(color: Theme.glow.opacity(0.55), radius: 30)
+                .shadow(color: Theme.glow.opacity(0.45), radius: 30)
                 .scaleEffect(orbIsLarge ? 1.04 : 1)
                 .accessibilityHidden(true)
                 .onAppear {

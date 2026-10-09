@@ -53,6 +53,13 @@ struct GlobeView: View {
             }
         }
         .mapStyle(.imagery(elevation: .realistic))
+        // Wash the Earth in soft blue to match the rest of the app.
+        .overlay {
+            Theme.globeTint
+                .blendMode(.color)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+        }
         .onMapCameraChange(frequency: .onEnd) { context in
             // Only listen while the person is in control, so the slow turn
             // below doesn't argue with itself.

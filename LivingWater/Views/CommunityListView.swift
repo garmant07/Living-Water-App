@@ -20,10 +20,13 @@ struct CommunityListView: View {
                             } label: {
                                 row(community)
                             }
+                            .listRowBackground(Theme.surface)
                         }
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Theme.background)
             .navigationTitle("All communities")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

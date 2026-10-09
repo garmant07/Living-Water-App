@@ -14,7 +14,7 @@ struct PhotoView: View {
                     .scaledToFill()
             } else {
                 LinearGradient(
-                    colors: [Theme.accent, Theme.brandStrong],
+                    colors: [Theme.background, Theme.deep],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
