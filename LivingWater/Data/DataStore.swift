@@ -205,6 +205,17 @@ enum Format {
         value.formatted(.number)
     }
 
+    /// 1_932_000 meters -> "1,200 miles" or "1,900 kilometers", whichever the
+    /// phone's region uses, rounded so it reads as an estimate.
+    static func distance(_ meters: Double) -> String {
+        let usesMiles = Locale.current.measurementSystem != .metric
+        let amount = meters / (usesMiles ? 1609.344 : 1000)
+        let step: Double = amount >= 1000 ? 100 : (amount >= 100 ? 10 : 1)
+        let rounded = Int((amount / step).rounded() * step)
+        let unit = usesMiles ? (rounded == 1 ? "mile" : "miles") : (rounded == 1 ? "kilometer" : "kilometers")
+        return "\(number(rounded)) \(unit)"
+    }
+
     /// "2026-10" -> "October 2026"
     static func month(_ isoMonth: String) -> String {
         let parser = DateFormatter()

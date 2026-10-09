@@ -14,6 +14,9 @@ struct GlobeView: View {
     @State private var lastTouched = Date.distantPast
     @State private var selected: Community?
     @State private var showingList = false
+    /// Global shows the globe; Near you shows the work closest to this person.
+    /// For testing: launch with "-frontDoor nearYou" to open on Near you.
+    @State private var mode = FrontDoorMode(rawValue: UserDefaults.standard.string(forKey: "frontDoor") ?? "") ?? .global
     /// The story pages opened on top of the globe.
     @State private var path: [Community] = []
 
@@ -36,7 +39,15 @@ struct GlobeView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            globe
+            ZStack {
+                // The globe stays alive underneath so it is ready to come back.
+                globe
+                    .accessibilityHidden(mode == .nearYou)
+                if mode == .nearYou {
+                    NearYouView(mode: $mode)
+                        .transition(.opacity)
+                }
+            }
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(for: Community.self) { community in
                     CommunityStoryView(community: community)
@@ -127,6 +138,15 @@ struct GlobeView: View {
     }
 
     private var header: some View {
+        VStack(spacing: 12) {
+            titleRow
+            FrontDoorPicker(mode: $mode)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+    }
+
+    private var titleRow: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
                 // PLACEHOLDER wordmark until the real logo is supplied.
@@ -152,14 +172,12 @@ struct GlobeView: View {
             }
             .accessibilityLabel("Show all communities as a list")
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
     }
 
     /// Runs 30 times a second. Turns the globe a little when nobody is using it.
     private func turn() {
         // Respect people who ask their phone for less motion.
-        guard !reduceMotion, selected == nil, !showingList, path.isEmpty else { return }
+        guard !reduceMotion, mode == .global, selected == nil, !showingList, path.isEmpty else { return }
 
         if isRotating {
             // The moment a finger moves the globe, hand over control.

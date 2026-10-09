@@ -220,47 +220,12 @@ struct HubView: View {
             ForEach(store.stories) { story in
                 if let community = store.community(id: story.communityId) {
                     NavigationLink(value: community) {
-                        storyCard(story, community: community)
+                        StoryCard(story: story, community: community)
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint("Opens this community's story")
                 }
             }
-        }
-    }
-
-    private func storyCard(_ story: StoryUpdate, community: Community) -> some View {
-        Card {
-            if let photo = story.photo {
-                PhotoView(photo: photo)
-                    .frame(height: 160)
-                    .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            HStack {
-                Text(Format.date(story.date))
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
-                Spacer()
-                if story.isSample {
-                    SampleBadge()
-                }
-            }
-            Text(story.title)
-                .font(.headline)
-                .foregroundStyle(Theme.foreground)
-                .multilineTextAlignment(.leading)
-            Text(story.body)
-                .font(.body)
-                .foregroundStyle(Theme.foreground)
-                .multilineTextAlignment(.leading)
-            HStack(spacing: 4) {
-                Text("\(community.country) · \(store.partner(id: community.partnerId)?.name ?? "")")
-                Image(systemName: "chevron.right")
-                    .accessibilityHidden(true)
-            }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(Theme.foreground)
         }
     }
 
