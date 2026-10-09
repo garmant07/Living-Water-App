@@ -1,26 +1,94 @@
 @import "tailwindcss";
 
+/*
+ * BRAND COLORS — PLACEHOLDERS
+ * The real Living Water Co. colors, fonts, and logo are still to be confirmed
+ * with the founders. Change the values here and the whole app updates.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --background: #f8f5ee; /* warm off-white */
+  --surface: #ffffff; /* cards */
+  --foreground: #0b2a3f; /* deep ocean text */
+  --muted: #4d6577; /* secondary text */
+  --border: #d9e2e6;
+  --brand: #0a6c8f; /* ocean blue: buttons and links */
+  --brand-strong: #0b3d5c; /* deep ocean: headers */
+  --on-brand: #ffffff; /* text on top of brand color */
+  --accent: #12a5b8; /* clear aqua */
+  --glow: #5fd9e6; /* soft glow for globe points */
+  --progress-track: #dbe7ea; /* the "still to do" part of a progress bar */
+  --sample-bg: #fff3d6; /* "Sample data" badge */
+  --sample-fg: #6b4a00;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #061a28;
+    --surface: #0c2a3d;
+    --foreground: #eef6f8;
+    --muted: #a3bcc9;
+    --border: #1c4259;
+    --brand: #2bb8cf;
+    --brand-strong: #8fe3ee;
+    --on-brand: #04202e;
+    --accent: #5fd9e6;
+    --glow: #8ff0f8;
+    --progress-track: #1c4259;
+    --sample-bg: #4a3600;
+    --sample-fg: #ffe3a1;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-on-brand: var(--on-brand);
+  --color-accent: var(--accent);
+  --color-glow: var(--glow);
+  --color-progress-track: var(--progress-track);
+  --color-sample-bg: var(--sample-bg);
+  --color-sample-fg: var(--sample-fg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Soft glowing orb that stands in for the globe until step 2. */
+.water-orb {
+  background: radial-gradient(
+    circle at 35% 30%,
+    var(--glow),
+    var(--accent) 35%,
+    var(--brand) 65%,
+    var(--brand-strong)
+  );
+  box-shadow: 0 0 60px color-mix(in srgb, var(--glow) 55%, transparent);
+  animation: orb-breathe 6s ease-in-out infinite;
+}
+
+@keyframes orb-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+/* Respect people who ask their device for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .water-orb {
+    animation: none;
+  }
 }

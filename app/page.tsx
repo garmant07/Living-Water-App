@@ -1,69 +1,107 @@
-import Image from "next/image";
+import SampleBadge from "@/components/SampleBadge";
+import {
+  formatCurrency,
+  formatNumber,
+  getPartners,
+  getTotals,
+} from "@/lib/data";
 
 export default function Home() {
+  const totals = getTotals();
+  const partners = getPartners();
+  const { progress } = totals;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-10 px-5 py-10">
+      <header className="flex flex-col items-center gap-6 text-center">
+        {/* Stand-in for the interactive globe, which arrives in step 2. */}
+        <div className="water-orb h-40 w-40 rounded-full" aria-hidden="true" />
+        <div className="flex flex-col gap-3">
+          {/* PLACEHOLDER wordmark until the real logo is supplied. */}
+          <h1 className="text-4xl font-semibold tracking-tight text-brand-strong">
+            Living Water Co.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-lg leading-7 text-muted">
+            Every bottle helps bring clean water to a community in need. See
+            where it&apos;s reaching, and how far there is still to go.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </header>
+
+      <section
+        aria-labelledby="together-heading"
+        className="flex flex-col gap-4 rounded-3xl border border-border bg-surface p-5"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="together-heading" className="text-xl font-semibold">
+            Together so far
+          </h2>
+          {totals.includesSampleData && <SampleBadge />}
         </div>
-      </main>
+
+        <dl className="grid grid-cols-2 gap-4">
+          <Stat label="People reached" value={formatNumber(totals.peopleServed)} />
+          <Stat label="Communities" value={formatNumber(totals.communities)} />
+          <Stat label="Countries" value={formatNumber(totals.countries)} />
+          <Stat label="Bottles sold" value={formatNumber(totals.bottlesSold)} />
+        </dl>
+
+        <div className="flex flex-col gap-2">
+          <div
+            role="progressbar"
+            aria-label="Raised toward all project goals"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress.percent}
+            className="h-3 w-full overflow-hidden rounded-full bg-progress-track"
+          >
+            <div
+              className="h-full rounded-full bg-brand"
+              style={{ width: `${progress.percent}%` }}
+            />
+          </div>
+          <p className="text-base leading-6">
+            <strong>{formatCurrency(progress.raised)}</strong> raised of{" "}
+            {formatCurrency(progress.goal)}.{" "}
+            <strong>{formatCurrency(progress.remaining)} still to go.</strong>
+          </p>
+        </div>
+      </section>
+
+      <section aria-labelledby="partners-heading" className="flex flex-col gap-3">
+        <h2 id="partners-heading" className="text-xl font-semibold">
+          The ministries doing the work
+        </h2>
+        <ul className="flex flex-col gap-3">
+          {partners.map((partner) => (
+            <li
+              key={partner.id}
+              className="rounded-2xl border border-border bg-surface p-4"
+            >
+              <p className="text-lg font-semibold">{partner.name}</p>
+              <p className="text-base text-muted">
+                {partner.countries.length} countries · since {partner.founded}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <figure className="flex flex-col gap-2 border-l-4 border-accent pl-4">
+        <blockquote className="text-lg leading-7">
+          &ldquo;Whoever drinks the water I give them will never thirst.&rdquo;
+        </blockquote>
+        <figcaption className="text-base text-muted">John 4:14</figcaption>
+      </figure>
+    </main>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col-reverse">
+      <dt className="text-base text-muted">{label}</dt>
+      <dd className="text-3xl font-semibold text-brand-strong">{value}</dd>
     </div>
   );
 }
