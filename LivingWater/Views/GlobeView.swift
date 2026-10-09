@@ -214,12 +214,12 @@ struct GlobeView: View {
                 HStack {
                     Image(systemName: icon)
                         .font(.title3)
-                        .foregroundStyle(Theme.accent)
+                        .foregroundStyle(Theme.foreground)
                         .accessibilityHidden(true)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.muted)
+                        .foregroundStyle(Theme.foreground)
                         .accessibilityHidden(true)
                 }
                 Text(title)
@@ -230,7 +230,7 @@ struct GlobeView: View {
                     .foregroundStyle(Theme.foreground)
                 Text(detail)
                     .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(Theme.foreground)
                 if showsSample {
                     SampleBadge()
                         .padding(.top, 2)
@@ -241,7 +241,7 @@ struct GlobeView: View {
             .minimumScaleFactor(0.8)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(14)
-            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 20))
+            .background(Theme.widget, in: RoundedRectangle(cornerRadius: 20))
             .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.border))
         }
         .buttonStyle(.plain)

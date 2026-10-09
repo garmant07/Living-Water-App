@@ -146,6 +146,8 @@ private struct GlobeDot: View {
             Circle()
                 .fill(.white)
                 .frame(width: size, height: size)
+                // A hairline of deep blue keeps the dot clear on pale land.
+                .overlay(Circle().stroke(Theme.deep.opacity(0.55), lineWidth: 1))
             if isSelected {
                 Circle()
                     .stroke(.white, lineWidth: 2)

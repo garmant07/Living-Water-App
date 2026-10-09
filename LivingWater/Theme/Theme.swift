@@ -11,6 +11,8 @@ enum Theme {
     static let background = Color(hex: 0x3A72AB)
     /// Cards: a slightly deeper blue
     static let surface = Color(hex: 0x316499)
+    /// The lighter blue of the front page's cards below the globe
+    static let widget = Color(hex: 0x4A84C0)
     /// The deepest blue, for badges and photo placeholders
     static let deep = Color(hex: 0x28557F)
     /// Main text
@@ -27,8 +29,8 @@ enum Theme {
     /// Soft glow for globe points
     static let glow = Color(hex: 0xD6ECFF)
     /// The globe is flat color with no shading: one blue for sea, one for land
-    static let globeSea = Color(hex: 0x2B5C91)
-    static let globeLand = Color(hex: 0x4A82BC)
+    static let globeSea = Color(hex: 0x4A84C0)
+    static let globeLand = Color(hex: 0x7AAEE0)
     /// Coastlines and the edge of the globe
     static let globeOutline = Color.white
     /// The "still to do" part of a progress bar

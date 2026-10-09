@@ -27,13 +27,13 @@ struct CommunityPreviewCard: View {
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(Theme.foreground)
                     .frame(width: 44, height: 44)
             }
             .accessibilityLabel("Close")
         }
         .padding(14)
-        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 22))
+        .background(Theme.widget, in: RoundedRectangle(cornerRadius: 22))
         .shadow(color: .black.opacity(0.25), radius: 16, y: 6)
     }
 
@@ -44,11 +44,11 @@ struct CommunityPreviewCard: View {
                 .foregroundStyle(Theme.foreground)
             Text(community.country)
                 .font(.subheadline)
-                .foregroundStyle(Theme.muted)
+                .foregroundStyle(Theme.foreground)
             if let partner {
                 Text("with \(partner.name)")
                     .font(.subheadline)
-                    .foregroundStyle(Theme.muted)
+                    .foregroundStyle(Theme.foreground)
             }
             Text("\(Format.number(community.peopleServed)) people served")
                 .font(.subheadline.weight(.semibold))
