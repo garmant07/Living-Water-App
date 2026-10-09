@@ -13,9 +13,15 @@ struct ProgressSummary: View {
                 .scaleEffect(x: 1, y: 2.5, anchor: .center)
                 .accessibilityHidden(true)
 
-            Text("\(Text(Format.currency(progress.raised)).bold()) raised of \(Format.currency(progress.goal)). \(Text("\(Format.currency(progress.remaining)) still to go.").bold())")
-                .font(.body)
-                .foregroundStyle(Theme.foreground)
+            Group {
+                if progress.isComplete {
+                    Text("\(Text(Format.currency(progress.raised)).bold()) raised. \(Text("Goal reached.").bold())")
+                } else {
+                    Text("\(Text(Format.currency(progress.raised)).bold()) raised of \(Format.currency(progress.goal)). \(Text("\(Format.currency(progress.remaining)) still to go.").bold())")
+                }
+            }
+            .font(.body)
+            .foregroundStyle(Theme.foreground)
         }
         .accessibilityElement(children: .combine)
     }

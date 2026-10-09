@@ -14,6 +14,8 @@ struct GlobeView: View {
     @State private var lastTouched = Date.distantPast
     @State private var selected: Community?
     @State private var showingList = false
+    /// The story pages opened on top of the globe.
+    @State private var path: [Community] = []
 
     private let store = DataStore.shared
     private let clock = Timer.publish(every: 1.0 / 30, on: .main, in: .common).autoconnect()
@@ -33,6 +35,16 @@ struct GlobeView: View {
     private static let idleSeconds: TimeInterval = 10
 
     var body: some View {
+        NavigationStack(path: $path) {
+            globe
+                .toolbar(.hidden, for: .navigationBar)
+                .navigationDestination(for: Community.self) { community in
+                    CommunityStoryView(community: community)
+                }
+        }
+    }
+
+    private var globe: some View {
         Map(position: $position, interactionModes: [.pan, .zoom]) {
             ForEach(store.communities) { community in
                 Annotation(community.name, coordinate: community.coordinate) {
@@ -74,6 +86,7 @@ struct GlobeView: View {
                 CommunityPreviewCard(
                     community: selected,
                     partner: store.partner(id: selected.partnerId),
+                    onOpen: { path.append(selected) },
                     onClose: { close() }
                 )
                 .padding(.horizontal, 16)
@@ -88,10 +101,17 @@ struct GlobeView: View {
         }
         .onAppear {
             #if DEBUG
-            // For testing: launch with "-previewCommunity wm-malawi-1" to open on a card.
-            if let id = UserDefaults.standard.string(forKey: "previewCommunity"),
+            // For testing: launch with "-previewCommunity wm-malawi-1" to open on a card,
+            // or "-previewStory wm-malawi-1" to open on a story page.
+            let defaults = UserDefaults.standard
+            if let id = defaults.string(forKey: "previewCommunity"),
                let community = store.community(id: id) {
                 select(community)
+            }
+            if path.isEmpty, let id = defaults.string(forKey: "previewStory"),
+               let community = store.community(id: id) {
+                select(community)
+                path.append(community)
             }
             #endif
         }
@@ -130,7 +150,7 @@ struct GlobeView: View {
     /// Runs 30 times a second. Turns the globe a little when nobody is using it.
     private func turn() {
         // Respect people who ask their phone for less motion.
-        guard !reduceMotion, selected == nil, !showingList else { return }
+        guard !reduceMotion, selected == nil, !showingList, path.isEmpty else { return }
 
         if isRotating {
             // The moment a finger moves the globe, hand over control.
