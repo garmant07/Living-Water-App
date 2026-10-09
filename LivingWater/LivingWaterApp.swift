@@ -13,7 +13,7 @@ struct LivingWaterApp: App {
                     GlobeView()
                 }
                 Tab("Hub", systemImage: "drop", value: "hub") {
-                    HomeView()
+                    HubView()
                 }
             }
             .tint(Theme.brand)

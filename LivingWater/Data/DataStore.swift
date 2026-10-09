@@ -163,6 +163,17 @@ final class DataStore {
         guard let type else { return allMilestones }
         return allMilestones.filter { $0.type == type }
     }
+
+    /// Where everyone together stands today on what a shared milestone counts.
+    /// nil for personal milestones, which depend on one person's own bottles.
+    func sharedValue(for metric: Milestone.Metric) -> Int? {
+        switch metric {
+        case .peopleServed: totals.peopleServed
+        case .communities: totals.communities
+        case .partners: partners.count
+        case .bottlesScanned: nil
+        }
+    }
 }
 
 // MARK: Formatting
@@ -176,6 +187,19 @@ enum Format {
     /// 52000 -> "52,000"
     static func number(_ value: Int) -> String {
         value.formatted(.number)
+    }
+
+    /// "2026-10" -> "October 2026"
+    static func month(_ isoMonth: String) -> String {
+        let parser = DateFormatter()
+        parser.calendar = Calendar(identifier: .gregorian)
+        parser.locale = Locale(identifier: "en_US_POSIX")
+        parser.timeZone = TimeZone(identifier: "UTC")
+        parser.dateFormat = "yyyy-MM"
+        guard let date = parser.date(from: isoMonth) else { return isoMonth }
+        var style = Date.FormatStyle().month(.wide).year()
+        style.timeZone = TimeZone(identifier: "UTC")!
+        return date.formatted(style)
     }
 
     /// "2026-09-28" -> "September 28, 2026"
