@@ -26,8 +26,11 @@ enum Theme {
     static let accent = Color(hex: 0xBFDDF5)
     /// Soft glow for globe points
     static let glow = Color(hex: 0xD6ECFF)
-    /// The Earth keeps its light and shadow but takes its color from this blue
-    static let globeTint = Color(hex: 0x6C9FD4)
+    /// The globe is flat color with no shading: one blue for sea, one for land
+    static let globeSea = Color(hex: 0x2B5C91)
+    static let globeLand = Color(hex: 0x4A82BC)
+    /// Coastlines and the edge of the globe
+    static let globeOutline = Color.white
     /// The "still to do" part of a progress bar
     static let progressTrack = Color.white.opacity(0.25)
     /// "Sample data" badge

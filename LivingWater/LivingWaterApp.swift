@@ -10,7 +10,7 @@ struct LivingWaterApp: App {
         WindowGroup {
             TabView(selection: $tab) {
                 Tab("Globe", systemImage: "globe", value: "globe") {
-                    GlobeView()
+                    GlobeView(goToHub: { tab = "hub" }, goToJourney: { tab = "journey" })
                 }
                 Tab("Hub", systemImage: "drop", value: "hub") {
                     HubView()

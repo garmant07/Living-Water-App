@@ -1,6 +1,6 @@
 import SwiftUI
 
-// The small card that appears when a light on the globe is tapped.
+// The small card that appears when a dot on the globe is tapped.
 struct CommunityPreviewCard: View {
     let community: Community
     let partner: Partner?

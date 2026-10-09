@@ -1,4 +1,3 @@
-import MapKit
 import SwiftUI
 
 // What a bottle did: the community and ministry that purchase supported.
@@ -166,40 +165,23 @@ struct BottleView: View {
     }
 }
 
-// A small still map showing where one community is.
+// A small still globe showing where one community is.
 private struct MiniMap: View {
     let community: Community
 
-    @State private var position: MapCameraPosition = .automatic
-
-    private var camera: MapCamera {
-        MapCamera(centerCoordinate: community.coordinate, distance: 9_000_000)
-    }
-
     var body: some View {
-        Map(position: $position, interactionModes: []) {
-            Annotation(community.name, coordinate: community.coordinate) {
-                GlowPoint(peopleServed: community.peopleServed, isSelected: true)
-            }
-            .annotationTitles(.hidden)
-        }
-        .mapStyle(.imagery(elevation: .realistic))
-        .overlay {
-            Theme.globeTint
-                .blendMode(.color)
-                .allowsHitTesting(false)
-        }
-        .frame(height: 180)
+        FlatGlobe(
+            communities: [community],
+            selectedID: community.id,
+            interactive: false,
+            camera: .constant(GlobeCamera(longitude: community.longitude, latitude: community.latitude, zoom: 1.6))
+        )
+        .frame(height: 200)
+        .background(Theme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 20))
-        .task {
-            position = .camera(camera)
-            // Apple's map only draws the light once the view has moved,
-            // so settle it with a tiny move.
-            try? await Task.sleep(for: .seconds(1))
-            position = .camera(camera.nudged)
-        }
+        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.border))
         .accessibilityElement()
-        .accessibilityLabel("Map showing \(community.name) in \(community.country)")
+        .accessibilityLabel("Globe showing \(community.name) in \(community.country)")
     }
 }
 

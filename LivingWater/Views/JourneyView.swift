@@ -1,5 +1,5 @@
-import MapKit
 import SwiftUI
+import simd
 
 // The Journey tab: the communities this person's own bottles supported,
 // their part in the bigger picture, and the badges they have earned.
@@ -8,7 +8,7 @@ struct JourneyView: View {
 
     @State private var path = NavigationPath()
     @State private var bottleToRemove: SavedBottle?
-    @State private var position: MapCameraPosition = .automatic
+    @State private var camera = GlobeCamera(longitude: 25, latitude: 8)
 
     private let store = DataStore.shared
     private let journey = JourneyStore.shared
@@ -79,7 +79,7 @@ struct JourneyView: View {
             Text("Your journey starts with one bottle")
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Theme.foreground)
-            Text("Scan a bottle and save it. The community it supported will appear here as your first light.")
+            Text("Scan a bottle and save it. The community it supported will appear here as your first dot.")
                 .font(.body)
                 .foregroundStyle(Theme.muted)
             Button("Scan a bottle", action: goToScan)
@@ -94,58 +94,32 @@ struct JourneyView: View {
         let communities = journey.communities
 
         return VStack(alignment: .leading, spacing: 10) {
-            Map(position: $position) {
-                // Faint lines join the lights in the order they were saved.
-                if communities.count > 1 {
-                    MapPolyline(coordinates: communities.map(\.coordinate))
-                        .stroke(.white.opacity(0.55), lineWidth: 1.5)
-                }
-                ForEach(communities) { community in
-                    Annotation(community.name, coordinate: community.coordinate) {
-                        Button {
-                            path.append(community)
-                        } label: {
-                            GlowPoint(peopleServed: community.peopleServed, isSelected: false)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(community.name)
-                        .accessibilityHint("Opens this community's story")
-                    }
-                    .annotationTitles(.hidden)
-                }
-            }
-            .mapStyle(.imagery(elevation: .realistic))
-            .overlay {
-                Theme.globeTint
-                    .blendMode(.color)
-                    .allowsHitTesting(false)
-            }
+            FlatGlobe(
+                communities: communities,
+                connectDots: true,
+                camera: $camera,
+                onSelect: { path.append($0) }
+            )
             .frame(height: 320)
-            .clipShape(RoundedRectangle(cornerRadius: 24))
-            // Aim the globe at the lights, again whenever the set of lights changes.
+            // Aim the globe at the dots, again whenever the set of dots changes.
             .task(id: communities.map(\.id)) {
-                let camera = startCamera(for: communities)
-                position = .camera(camera)
-                // Apple's map only draws the lights once the view has moved,
-                // so settle it with a tiny move.
-                try? await Task.sleep(for: .seconds(1))
-                position = .camera(camera.nudged)
+                camera = startCamera(for: communities)
             }
 
-            Text("Drag to turn the globe. Tap a light to read its story.")
+            Text("Drag to turn the globe. Tap a dot to read its story.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.muted)
         }
     }
 
-    /// Looks at the middle of this person's communities from far away.
-    private func startCamera(for communities: [Community]) -> MapCamera {
-        let count = Double(max(communities.count, 1))
-        let latitude = communities.reduce(0) { $0 + $1.latitude } / count
-        let longitude = communities.reduce(0) { $0 + $1.longitude } / count
-        return MapCamera(
-            centerCoordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude),
-            distance: communities.count > 1 ? 24_000_000 : 9_000_000
+    /// Looks at the middle of this person's communities.
+    private func startCamera(for communities: [Community]) -> GlobeCamera {
+        let middle = communities.reduce(SIMD3<Double>(0, 0, 0)) { $0 + $1.unitVector }
+        guard simd_length(middle) > 0.001 else { return GlobeCamera(longitude: 25, latitude: 8) }
+        let direction = simd_normalize(middle)
+        return GlobeCamera(
+            longitude: atan2(direction.y, direction.x) * 180 / .pi,
+            latitude: min(max(asin(direction.z) * 180 / .pi, -80), 80)
         )
     }
 
