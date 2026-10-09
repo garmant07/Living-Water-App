@@ -42,7 +42,7 @@ final class DataStore {
     private let allStories: [StoryUpdate]
     private let bottles: [BottleCode]
     private let allMilestones: [Milestone]
-    /// The 25 Personal Journey levels, smallest first.
+    /// The Personal Journey levels, smallest first.
     let levels: [JourneyLevel]
 
     private init() {

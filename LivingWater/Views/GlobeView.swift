@@ -204,8 +204,8 @@ struct GlobeView: View {
             showsSample: false,
             action: goToJourney
         ) {
-            // The container being filled right now.
-            VesselView(kind: (progress.next ?? progress.current)?.vessel ?? .glass, fill: progress.fill, lineWidth: 2.5)
+            // The biggest thing filled so far, or an empty glass before the first bottle.
+            VesselView(kind: progress.current?.vessel ?? .glass, fill: progress.current == nil ? 0 : 1, lineWidth: 2.5)
                 .frame(width: 44, height: 44)
         }
     }

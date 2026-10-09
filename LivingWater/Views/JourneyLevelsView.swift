@@ -1,7 +1,7 @@
 import SwiftUI
 
 // The top of the Personal Journey: the level reached, the container being
-// filled now, and all 25 levels from a glass of water to an Olympic pool.
+// filled now, and every level from a glass of water up to a fire engine.
 struct JourneyLevelsView: View {
     /// The person's real number of saved bottles.
     let bottles: Int
@@ -41,26 +41,43 @@ struct JourneyLevelsView: View {
         let progress = progress
 
         return Card {
-            VStack(spacing: 14) {
-                Text(progress.current.map { "Level \($0.level) of \(store.levels.count)" } ?? "Level 0 of \(store.levels.count)")
+            VStack(spacing: 12) {
+                Text("Level \(progress.current?.level ?? 0) of \(store.levels.count)")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.muted)
 
-                // The container being filled now. It fills as bottles are scanned.
-                VesselView(kind: (progress.next ?? progress.current)?.vessel ?? .glass, fill: progress.fill, lineWidth: 4)
-                    .frame(width: 170, height: 170)
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.35), value: progress.fill)
-
+                // What has been filled so far, and what that could mean to one person.
                 Text(progress.current?.name ?? "Your glass is waiting")
                     .font(.title.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
                     .multilineTextAlignment(.center)
                     .accessibilityAddTraits(.isHeader)
 
-                Text(givenLine(progress))
+                Text(progress.current?.note ?? "Every bottle you scan pours a little more in.")
                     .font(.body)
                     .foregroundStyle(Theme.foreground)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if progress.bottles > 0 {
+                    Text(givenLine(progress))
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.muted)
+                        .multilineTextAlignment(.center)
+                }
+
+                Divider().overlay(Theme.border)
+                    .padding(.vertical, 4)
+
+                // The container being filled now. It fills as bottles are scanned.
+                if let next = progress.next {
+                    Text("Now filling \(next.short)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.muted)
+                }
+                VesselView(kind: (progress.next ?? progress.current)?.vessel ?? .glass, fill: progress.fill, lineWidth: 4)
+                    .frame(width: 150, height: 150)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.35), value: progress.fill)
 
                 Text(nextLine(progress))
                     .font(.body.weight(.semibold))
@@ -73,18 +90,19 @@ struct JourneyLevelsView: View {
     }
 
     private func givenLine(_ progress: LevelProgress) -> String {
-        guard progress.bottles > 0 else { return "Every bottle you scan pours a little more in." }
         return "\(Format.number(progress.bottles)) \(progress.bottles == 1 ? "bottle" : "bottles") · \(Format.volume(progress.liters)) of water"
     }
 
     private func nextLine(_ progress: LevelProgress) -> String {
-        guard let next = progress.next else { return "You've filled an Olympic swimming pool. Every level is complete." }
+        guard progress.next != nil else {
+            return "You've filled \(store.levels.last?.short ?? "the last one"). Every level is complete."
+        }
         let count = progress.bottlesToNext
-        if progress.bottles == 0 { return "Scan your first bottle to fill \(next.short)." }
-        return "\(Format.number(count)) more \(count == 1 ? "bottle fills" : "bottles fill") \(next.short)."
+        if progress.bottles == 0 { return "Scan your first bottle to fill it." }
+        return "\(Format.number(count)) more \(count == 1 ? "bottle" : "bottles") to fill it."
     }
 
-    // MARK: All 25 levels
+    // MARK: Every level
 
     private var ladder: some View {
         let progress = progress
@@ -92,7 +110,7 @@ struct JourneyLevelsView: View {
 
         return VStack(alignment: .leading, spacing: 12) {
             SectionHeading("All \(store.levels.count) levels")
-            Text("From a glass of water to an Olympic swimming pool. Tap any level to see what it takes.")
+            Text("From \(store.levels.first?.short ?? "a glass") to \(store.levels.last?.short ?? "the top"). Tap any level to see what that much clean water could mean to someone.")
                 .font(.body)
                 .foregroundStyle(Theme.muted)
 
@@ -127,6 +145,25 @@ struct JourneyLevelsView: View {
             if let level = selectedLevel {
                 levelDetail(level, isReached: level.level <= reached)
             }
+
+            basisNote
+        }
+    }
+
+    /// Says where the "days of water" in the descriptions come from.
+    private var basisNote: some View {
+        let basis = store.company.dailyNeed
+
+        return VStack(alignment: .leading, spacing: 2) {
+            Text("The descriptions count \(basis.display) a day as what one person needs for drinking, cooking and basic washing.")
+                .font(.footnote)
+                .foregroundStyle(Theme.muted)
+            if let url = URL(string: basis.sourceUrl) {
+                Link("Source: Sphere Handbook, checked \(Format.month(basis.asOf))", destination: url)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+                    .frame(minHeight: 44, alignment: .leading)
+            }
         }
     }
 
@@ -147,7 +184,8 @@ struct JourneyLevelsView: View {
                         .foregroundStyle(Theme.foreground)
                     Text(level.note)
                         .font(.subheadline)
-                        .foregroundStyle(Theme.muted)
+                        .foregroundStyle(Theme.foreground)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(isReached ? "Reached" : "\(Format.number(max(needed - shownBottles, 0))) more to go")
                         .font(.subheadline)
                         .foregroundStyle(Theme.muted)

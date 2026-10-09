@@ -142,6 +142,8 @@ struct CompanyTotals: Codable, Hashable {
     /// How much water one scanned bottle counts for on the Personal Journey.
     /// PLACEHOLDER: 0.5 is the water inside a half-litre bottle.
     let litersPerBottle: Double
+    /// The published figure the level descriptions are worked out from.
+    let dailyNeed: SourcedStat
     let asOf: String
     let isSample: Bool
 }
@@ -151,7 +153,7 @@ enum VesselKind: String, Codable {
     case glass, jug, bucket, tub, tank, pool
 }
 
-/// One step on the Personal Journey, from a glass up to an Olympic pool.
+/// One step on the Personal Journey, from a glass up to a fire engine.
 struct JourneyLevel: Codable, Identifiable, Hashable {
     let level: Int
     let name: String
@@ -171,7 +173,7 @@ struct LevelProgress {
     let liters: Double
     /// The biggest thing filled so far. nil before the first bottle.
     let current: JourneyLevel?
-    /// The thing being filled now. nil once the Olympic pool is full.
+    /// The thing being filled now. nil once the last level is full.
     let next: JourneyLevel?
     let bottlesToNext: Int
     /// How full the thing being filled is, 0 to 1.

@@ -2,5 +2,12 @@
   "bottlesSold": 52000,
   "asOf": "2026-10",
   "isSample": true,
-  "litersPerBottle": 0.5
+  "litersPerBottle": 0.5,
+  "dailyNeed": {
+    "label": "Water one person needs each day for drinking, cooking and basic washing (Sphere Handbook minimum standard)",
+    "display": "about 15 litres",
+    "value": 15,
+    "sourceUrl": "https://spherestandards.org/handbook/",
+    "asOf": "2026-10"
+  }
 }
