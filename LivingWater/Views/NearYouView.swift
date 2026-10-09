@@ -2,13 +2,13 @@ import CoreLocation
 import SwiftUI
 import UIKit
 
-/// The two ways to look at the front door.
+/// The two ways to look at the globe page.
 enum FrontDoorMode: String {
     case global
     case nearYou
 }
 
-// The Global / Near you switch shown at the top of the front door.
+// The Global / Near you switch shown at the top of the globe page.
 struct FrontDoorPicker: View {
     @Binding var mode: FrontDoorMode
 
@@ -50,8 +50,6 @@ struct NearYouView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                header
-
                 if let origin {
                     placeRow
                     results(from: origin)
@@ -70,24 +68,6 @@ struct NearYouView: View {
             if useLocation, case .idle = location.status {
                 location.request()
             }
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Living Water Co.")
-                    .font(.title2.weight(.semibold))
-                    .accessibilityAddTraits(.isHeader)
-                Text("The work closest to you.")
-                    .font(.subheadline)
-            }
-            .foregroundStyle(Theme.foreground)
-            // Matches the height of the list button on the globe, so the
-            // switch below doesn't jump when changing views.
-            .frame(minHeight: 44, alignment: .top)
-
-            FrontDoorPicker(mode: $mode)
         }
     }
 

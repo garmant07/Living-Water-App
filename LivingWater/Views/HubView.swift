@@ -3,12 +3,13 @@ import SwiftUI
 // The Community Hub: the big picture. What has been done together, what is
 // still left to do, who is doing the work, and the latest news from the field.
 struct HubView: View {
-    @State private var path = NavigationPath()
+    @Environment(Router.self) private var router
 
     private let store = DataStore.shared
+    private static var didPreview = false
 
     var body: some View {
-        NavigationStack(path: $path) {
+        Group {
             ScrollViewReader { scroller in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 36) {
@@ -20,7 +21,8 @@ struct HubView: View {
                         verse
                     }
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 24)
+                    .padding(.top, 4)
+                    .padding(.bottom, 24)
                 }
                 .onAppear {
                     #if DEBUG
@@ -30,21 +32,16 @@ struct HubView: View {
                     if let section = defaults.string(forKey: "hubSection") {
                         scroller.scrollTo(section, anchor: .top)
                     }
-                    if path.isEmpty, let id = defaults.string(forKey: "previewPartner"),
+                    if !Self.didPreview, let id = defaults.string(forKey: "previewPartner"),
                        let partner = store.partner(id: id) {
-                        path.append(partner)
+                        Self.didPreview = true
+                        router.path.append(partner)
                     }
                     #endif
                 }
             }
             .background(Theme.background)
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: Community.self) { community in
-                CommunityStoryView(community: community)
-            }
-            .navigationDestination(for: Partner.self) { partner in
-                PartnerDetailView(partner: partner)
-            }
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -250,4 +247,5 @@ struct HubView: View {
 
 #Preview {
     HubView()
+        .environment(Router())
 }

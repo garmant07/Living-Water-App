@@ -7,23 +7,24 @@ struct BottleRoute: Hashable {
     let code: String
 }
 
-// The Scan tab: point the camera at a bottle's QR code, or type the code in.
+// The Scan page: point the camera at a bottle's QR code, or type the code in.
 struct ScanView: View {
-    let goToHub: () -> Void
-
     private enum CameraState {
         case checking, ready, denied, unavailable
     }
 
-    @State private var path = NavigationPath()
+    @Environment(Router.self) private var router
+    /// true once a bottle page has been opened, so extra camera reads are ignored.
+    @State private var hasOpened = false
     @State private var camera = CameraState.checking
     @State private var typedCode = ""
     @FocusState private var codeFieldFocused: Bool
 
     private let store = DataStore.shared
+    private static var didPreview = false
 
     var body: some View {
-        NavigationStack(path: $path) {
+        Group {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     header
@@ -31,22 +32,19 @@ struct ScanView: View {
                     manualEntry
                 }
                 .padding(.horizontal, 20)
-                .padding(.vertical, 24)
+                .padding(.top, 4)
+                .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: BottleRoute.self) { route in
-                BottleView(code: route.code, goToHub: goToHub)
-            }
-            .navigationDestination(for: Community.self) { community in
-                CommunityStoryView(community: community)
-            }
+            .navigationBarTitleDisplayMode(.inline)
             .onAppear {
+                hasOpened = false
                 checkCamera()
                 #if DEBUG
                 // For testing: launch with "-previewBottle LW-MW-0001" to open a bottle page.
-                if path.isEmpty, let code = UserDefaults.standard.string(forKey: "previewBottle") {
+                if !Self.didPreview, let code = UserDefaults.standard.string(forKey: "previewBottle") {
+                    Self.didPreview = true
                     open(store.bottleCode(fromScanned: code))
                 }
                 #endif
@@ -208,11 +206,13 @@ struct ScanView: View {
 
     private func open(_ code: String) {
         // Ignore extra reads while a bottle page is already showing.
-        guard path.isEmpty else { return }
-        path.append(BottleRoute(code: code))
+        guard !hasOpened else { return }
+        hasOpened = true
+        router.path.append(BottleRoute(code: code))
     }
 }
 
 #Preview {
-    ScanView(goToHub: {})
+    ScanView()
+        .environment(Router())
 }

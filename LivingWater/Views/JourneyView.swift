@@ -1,12 +1,10 @@
 import SwiftUI
 import simd
 
-// The Journey tab: the communities this person's own bottles supported,
+// The Personal Journey page: the communities this person's own bottles supported,
 // their part in the bigger picture, and the badges they have earned.
 struct JourneyView: View {
-    let goToScan: () -> Void
-
-    @State private var path = NavigationPath()
+    @Environment(Router.self) private var router
     @State private var bottleToRemove: SavedBottle?
     @State private var camera = GlobeCamera(longitude: 25, latitude: 8)
 
@@ -14,7 +12,7 @@ struct JourneyView: View {
     private let journey = JourneyStore.shared
 
     var body: some View {
-        NavigationStack(path: $path) {
+        Group {
             ScrollViewReader { scroller in
             ScrollView {
                 VStack(alignment: .leading, spacing: 32) {
@@ -32,7 +30,8 @@ struct JourneyView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.vertical, 24)
+                .padding(.top, 4)
+                .padding(.bottom, 24)
             }
             .onAppear {
                 #if DEBUG
@@ -44,10 +43,7 @@ struct JourneyView: View {
             }
             }
             .background(Theme.background)
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: Community.self) { community in
-                CommunityStoryView(community: community)
-            }
+            .navigationBarTitleDisplayMode(.inline)
             .confirmationDialog(
                 "Remove this bottle from your journey?",
                 isPresented: Binding(
@@ -93,7 +89,7 @@ struct JourneyView: View {
             Text("Scan a bottle and save it. The community it supported will appear here as your first dot.")
                 .font(.body)
                 .foregroundStyle(Theme.muted)
-            Button("Scan a bottle", action: goToScan)
+            Button("Scan a bottle") { router.open(.scan) }
                 .buttonStyle(PrimaryButtonStyle())
                 .padding(.top, 4)
         }
@@ -109,7 +105,7 @@ struct JourneyView: View {
                 communities: communities,
                 connectDots: true,
                 camera: $camera,
-                onSelect: { path.append($0) }
+                onSelect: { router.path.append($0) }
             )
             .frame(height: 320)
             // Aim the globe at the dots, again whenever the set of dots changes.
@@ -253,7 +249,7 @@ struct JourneyView: View {
                 }
             }
 
-            Button("Scan another bottle", action: goToScan)
+            Button("Scan another bottle") { router.open(.scan) }
                 .buttonStyle(SecondaryButtonStyle())
                 .padding(.top, 4)
         }
@@ -261,5 +257,6 @@ struct JourneyView: View {
 }
 
 #Preview {
-    JourneyView(goToScan: {})
+    JourneyView()
+        .environment(Router())
 }

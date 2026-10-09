@@ -37,6 +37,14 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate {
         default:
             status = .denied
         }
+
+        // Don't leave someone watching a spinner: give up after 12 seconds.
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(12))
+            if let self, case .asking = self.status {
+                self.status = .failed
+            }
+        }
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {

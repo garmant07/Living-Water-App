@@ -4,9 +4,9 @@ import SwiftUI
 // An unknown code gets a friendly page pointing to the Hub instead.
 struct BottleView: View {
     let code: String
-    let goToHub: () -> Void
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(Router.self) private var router
 
     private let store = DataStore.shared
     private let journey = JourneyStore.shared
@@ -156,7 +156,10 @@ struct BottleView: View {
                 .lineSpacing(4)
                 .foregroundStyle(Theme.muted)
 
-            Button("Go to the Community Hub", action: goToHub)
+            Button("Go to the Community Hub") {
+                router.goHome()
+                router.open(.hub)
+            }
                 .buttonStyle(PrimaryButtonStyle())
             Button("Try another code") { dismiss() }
                 .buttonStyle(SecondaryButtonStyle())
@@ -187,6 +190,7 @@ private struct MiniMap: View {
 
 #Preview {
     NavigationStack {
-        BottleView(code: "LW-MW-0001", goToHub: {})
+        BottleView(code: "LW-MW-0001")
+            .environment(Router())
     }
 }

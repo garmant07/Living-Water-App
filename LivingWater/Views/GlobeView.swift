@@ -1,13 +1,11 @@
 import Combine
 import SwiftUI
 
-// The front page. The globe sits at the top and takes about two thirds of the
-// screen; below it are the ways in to the Community Hub and the Journey.
-// Tapping a dot swaps that lower part for a card about the community.
+// The globe page, opened by tapping the Earth on the home page. Spin it,
+// pinch it, tap a dot to meet a community. The Global / Near you switch at
+// the top swaps the globe for the work closest to this person.
 struct GlobeView: View {
-    let goToHub: () -> Void
-    let goToJourney: () -> Void
-
+    @Environment(Router.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var camera = GlobeView.startCamera
@@ -20,12 +18,10 @@ struct GlobeView: View {
     /// Global shows the globe; Near you shows the work closest to this person.
     /// For testing: launch with "-frontDoor nearYou" to open on Near you.
     @State private var mode = FrontDoorMode(rawValue: UserDefaults.standard.string(forKey: "frontDoor") ?? "") ?? .global
-    /// The story pages opened on top of the front page.
-    @State private var path: [Community] = []
 
     private let store = DataStore.shared
-    private let journey = JourneyStore.shared
     private let clock = Timer.publish(every: 1.0 / 30, on: .main, in: .common).autoconnect()
+    private static var didPreview = false
 
     /// The whole Earth, centered on Africa.
     private static let startCamera = GlobeCamera(longitude: 25, latitude: 8)
@@ -35,65 +31,33 @@ struct GlobeView: View {
     private static let degreesPerTick = 0.1
     /// Seconds of stillness before the globe starts turning again.
     private static let idleSeconds: TimeInterval = 10
-    /// The share of the screen given to the title and globe together.
-    private static let globeShare = 0.66
 
     var body: some View {
-        NavigationStack(path: $path) {
-            ZStack {
-                // The globe stays alive underneath so it is ready to come back.
-                frontPage
-                    .accessibilityHidden(mode == .nearYou)
-                if mode == .nearYou {
-                    NearYouView(mode: $mode)
-                        .transition(.opacity)
-                }
-            }
-            .background(Theme.background)
-            .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: Community.self) { community in
-                CommunityStoryView(community: community)
+        ZStack {
+            // The globe stays alive underneath so it is ready to come back.
+            globePage
+                .accessibilityHidden(mode == .nearYou)
+            if mode == .nearYou {
+                NearYouView(mode: $mode)
+                    .transition(.opacity)
             }
         }
-    }
-
-    private var frontPage: some View {
-        GeometryReader { geometry in
-            VStack(spacing: 0) {
-                VStack(spacing: 12) {
-                    header
-                    FlatGlobe(
-                        communities: store.communities,
-                        selectedID: selected?.id,
-                        camera: $camera,
-                        onTouch: {
-                            isRotating = false
-                            flyTarget = nil
-                            lastTouched = Date()
-                        },
-                        onSelect: select
-                    )
-                    // When zoomed in, the globe fades out softly at the top
-                    // and bottom instead of ending in a hard line.
-                    .mask(
-                        LinearGradient(
-                            stops: [
-                                .init(color: .black.opacity(camera.zoom > 1.02 ? 0 : 1), location: 0),
-                                .init(color: .black, location: 0.07),
-                                .init(color: .black, location: 0.93),
-                                .init(color: .black.opacity(camera.zoom > 1.02 ? 0 : 1), location: 1),
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+        .background(Theme.background)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                FrontDoorPicker(mode: $mode)
+                    .frame(width: 210)
+            }
+            if mode == .global {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingList = true
+                    } label: {
+                        Image(systemName: "list.bullet")
+                    }
+                    .accessibilityLabel("Show all communities as a list")
                 }
-                .frame(height: geometry.size.height * Self.globeShare)
-
-                lowerPart
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
         .onReceive(clock) { _ in tick() }
@@ -106,52 +70,55 @@ struct GlobeView: View {
             #if DEBUG
             // For testing: launch with "-previewCommunity wm-malawi-1" to open on a card,
             // or "-previewStory wm-malawi-1" to open on a story page.
+            guard !Self.didPreview else { return }
+            Self.didPreview = true
             let defaults = UserDefaults.standard
             if let id = defaults.string(forKey: "previewCommunity"),
                let community = store.community(id: id) {
                 select(community)
             }
-            if path.isEmpty, let id = defaults.string(forKey: "previewStory"),
+            if let id = defaults.string(forKey: "previewStory"),
                let community = store.community(id: id) {
                 select(community)
-                path.append(community)
+                router.path.append(community)
             }
             #endif
         }
     }
 
-    private var header: some View {
-        VStack(spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    // PLACEHOLDER wordmark until the real logo is supplied.
-                    Text("Living Water Co.")
-                        .font(.title2.weight(.semibold))
-                        .accessibilityAddTraits(.isHeader)
-                    Text("\(store.communities.count) communities. Tap a dot.")
-                        .font(.subheadline)
-                }
-                .foregroundStyle(Theme.foreground)
+    private var globePage: some View {
+        VStack(spacing: 0) {
+            FlatGlobe(
+                communities: store.communities,
+                selectedID: selected?.id,
+                camera: $camera,
+                onTouch: {
+                    isRotating = false
+                    flyTarget = nil
+                    lastTouched = Date()
+                },
+                onSelect: select
+            )
+            // When zoomed in, the globe fades out softly at the top
+            // and bottom instead of ending in a hard line.
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .black.opacity(camera.zoom > 1.02 ? 0 : 1), location: 0),
+                        .init(color: .black, location: 0.07),
+                        .init(color: .black, location: 0.93),
+                        .init(color: .black.opacity(camera.zoom > 1.02 ? 0 : 1), location: 1),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
 
-                Spacer()
-
-                Button {
-                    showingList = true
-                } label: {
-                    Image(systemName: "list.bullet")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Theme.foreground)
-                        .frame(width: 44, height: 44)
-                        .background(Theme.surface, in: Circle())
-                        .overlay(Circle().stroke(Theme.border))
-                }
-                .accessibilityLabel("Show all communities as a list")
-            }
-
-            FrontDoorPicker(mode: $mode)
+            lowerPart
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .frame(maxWidth: .infinity, minHeight: 190, alignment: .top)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
     }
 
     // MARK: Below the globe
@@ -162,99 +129,23 @@ struct GlobeView: View {
             CommunityPreviewCard(
                 community: selected,
                 partner: store.partner(id: selected.partnerId),
-                onOpen: { path.append(selected) },
+                onOpen: { router.path.append(selected) },
                 onClose: { close() }
             )
             .transition(.opacity)
         } else {
-            HStack(alignment: .top, spacing: 12) {
-                hubDoor
-                journeyDoor
+            VStack(spacing: 6) {
+                Text("\(store.communities.count) communities")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+                Text("Drag to spin, pinch to zoom, and tap a dot to meet a community.")
+                    .font(.body)
+                    .foregroundStyle(Theme.muted)
+                    .multilineTextAlignment(.center)
             }
+            .padding(.top, 8)
             .transition(.opacity)
         }
-    }
-
-    private var hubDoor: some View {
-        let totals = store.totals
-
-        return doorCard(
-            title: "Community Hub",
-            headline: "\(Format.number(totals.peopleServed)) people reached",
-            detail: "\(Format.currency(totals.progress.remaining)) still to go",
-            showsSample: totals.includesSampleData,
-            action: goToHub
-        ) {
-            Image(systemName: "drop")
-                .font(.title)
-                .foregroundStyle(Theme.foreground)
-                .frame(height: 44)
-        }
-    }
-
-    private var journeyDoor: some View {
-        let progress = store.levelProgress(bottles: journey.bottles.count)
-
-        return doorCard(
-            title: "Personal Journey",
-            headline: progress.current.map { "Level \($0.level) · \($0.name)" } ?? "Level 0",
-            detail: progress.bottles == 0
-                ? "Scan a bottle to fill your glass"
-                : "\(Format.number(progress.bottles)) \(progress.bottles == 1 ? "bottle" : "bottles") · \(Format.volume(progress.liters))",
-            showsSample: false,
-            action: goToJourney
-        ) {
-            // The biggest thing filled so far, or an empty glass before the first bottle.
-            VesselView(kind: progress.current?.vessel ?? .glass, fill: progress.current == nil ? 0 : 1, lineWidth: 2.5)
-                .frame(width: 44, height: 44)
-        }
-    }
-
-    /// A card below the globe: the title on top, then its picture, then two lines.
-    private func doorCard<Picture: View>(
-        title: String,
-        headline: String,
-        detail: String,
-        showsSample: Bool,
-        action: @escaping () -> Void,
-        @ViewBuilder picture: () -> Picture
-    ) -> some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(title)
-                        .font(.headline)
-                        .foregroundStyle(Theme.foreground)
-                    Spacer(minLength: 4)
-                    Image(systemName: "chevron.right")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Theme.foreground)
-                        .accessibilityHidden(true)
-                }
-                picture()
-                    .accessibilityHidden(true)
-                Text(headline)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.foreground)
-                Text(detail)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.foreground)
-                if showsSample {
-                    SampleBadge()
-                        .padding(.top, 2)
-                }
-                Spacer(minLength: 0)
-            }
-            .multilineTextAlignment(.leading)
-            .minimumScaleFactor(0.8)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(14)
-            .background(Theme.widget, in: RoundedRectangle(cornerRadius: 20))
-            .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.border))
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens \(title)")
     }
 
     // MARK: Turning and gliding
@@ -278,7 +169,7 @@ struct GlobeView: View {
         }
 
         // Respect people who ask their phone for less motion.
-        guard !reduceMotion, mode == .global, selected == nil, !showingList, path.isEmpty else { return }
+        guard !reduceMotion, mode == .global, selected == nil, !showingList else { return }
 
         if isRotating {
             camera.longitude = wrapDegrees(camera.longitude + Self.degreesPerTick)
@@ -315,5 +206,8 @@ struct GlobeView: View {
 }
 
 #Preview {
-    GlobeView(goToHub: {}, goToJourney: {})
+    NavigationStack {
+        GlobeView()
+    }
+    .environment(Router())
 }
