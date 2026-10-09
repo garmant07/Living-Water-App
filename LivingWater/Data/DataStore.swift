@@ -143,8 +143,24 @@ final class DataStore {
     // MARK: Bottles
 
     /// Tidies a typed or scanned code so " lw-mw-0001 " matches "LW-MW-0001".
+    /// Long dashes that a keyboard may swap in are turned back into hyphens.
     func normalizeBottleCode(_ code: String) -> String {
-        code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        code.trimmingCharacters(in: .whitespacesAndNewlines)
+            .uppercased()
+            .replacingOccurrences(of: "–", with: "-")
+            .replacingOccurrences(of: "—", with: "-")
+    }
+
+    /// Pulls the bottle code out of whatever a QR code contained: either a
+    /// link ending in /b/LW-MW-0001 or just the code by itself.
+    func bottleCode(fromScanned text: String) -> String {
+        if let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
+           url.scheme != nil,
+           let marker = url.pathComponents.lastIndex(of: "b"),
+           marker + 1 < url.pathComponents.count {
+            return normalizeBottleCode(url.pathComponents[marker + 1])
+        }
+        return normalizeBottleCode(text)
     }
 
     func bottle(code: String) -> BottleCode? {
