@@ -3,7 +3,22 @@ import SwiftUI
 
 /// The pages that open from the home page.
 enum Page: String, Hashable {
-    case globe, hub, scan, journey, donate, shop, community
+    case globe, hub, scan, journey, donate, shop, community, account
+}
+
+/// Pages that need something handed to them, or that open from inside other pages.
+enum AppRoute: Hashable {
+    case product(ShopProduct)
+    case cart
+    case checkout
+    case orders
+    case order(Order)
+    case operatorHome
+    case operatorProducts
+    case operatorOrders
+    case operatorOrder(Order)
+    case operatorMessages
+    case operatorStories
 }
 
 /// Keeps track of which pages are open, so any screen can open another
@@ -40,6 +55,22 @@ struct LivingWaterApp: App {
                         case .donate: DonateView()
                         case .shop: ShopView()
                         case .community: CommunityView()
+                        case .account: AccountView()
+                        }
+                    }
+                    .navigationDestination(for: AppRoute.self) { route in
+                        switch route {
+                        case .product(let product): ProductDetailView(product: product)
+                        case .cart: CartView()
+                        case .checkout: CheckoutView()
+                        case .orders: OrdersView()
+                        case .order(let order): OrderDetailView(order: order)
+                        case .operatorHome: OperatorDashboardView()
+                        case .operatorProducts: OperatorProductsView()
+                        case .operatorOrders: OperatorOrdersView()
+                        case .operatorOrder(let order): OperatorOrderView(order: order)
+                        case .operatorMessages: OperatorMessagesView()
+                        case .operatorStories: OperatorStoriesView()
                         }
                     }
                     .navigationDestination(for: Community.self) { community in
@@ -59,12 +90,23 @@ struct LivingWaterApp: App {
             .tint(Theme.brand)
             // The whole app is white text on blue, so system bars use their dark look.
             .preferredColorScheme(.dark)
+            // Keep track of who is signed in, and fetch the latest content.
+            .task { await AuthStore.shared.start() }
+            .task { await CloudContent.shared.load() }
             .onAppear {
                 #if DEBUG
                 // For testing: launch with "-startPage hub" to open straight on a page.
                 if router.path.isEmpty,
                    let page = UserDefaults.standard.string(forKey: "startPage").flatMap(Page.init) {
                     router.open(page)
+                }
+                // For testing: "-startRoute cart", "product" or "operator".
+                switch UserDefaults.standard.string(forKey: "startRoute") {
+                case "cart": router.path.append(AppRoute.cart)
+                case "product": router.path.append(AppRoute.product(ShopProduct.samples[1]))
+                case "operator": router.path.append(AppRoute.operatorHome)
+                case "operatorProducts": router.path.append(AppRoute.operatorProducts)
+                default: break
                 }
                 #endif
             }

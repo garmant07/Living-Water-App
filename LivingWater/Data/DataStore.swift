@@ -232,6 +232,11 @@ enum Format {
         amount.formatted(.currency(code: "USD").precision(.fractionLength(0)))
     }
 
+    /// 2499 cents -> "$24.99"
+    static func price(cents: Int) -> String {
+        (Double(cents) / 100).formatted(.currency(code: "USD"))
+    }
+
     /// 52000 -> "52,000"
     static func number(_ value: Int) -> String {
         value.formatted(.number)

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A10000000000000000000020 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000021 /* Supabase */; };
+		A10000000000000000000023 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000024 /* StripePaymentSheet */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000020 /* Supabase in Frameworks */,
+				A10000000000000000000023 /* StripePaymentSheet in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +73,7 @@
 			name = LivingWater;
 			packageProductDependencies = (
 				A10000000000000000000021 /* Supabase */,
+				A10000000000000000000024 /* StripePaymentSheet */,
 			);
 			productName = LivingWater;
 			productReference = A10000000000000000000001 /* LivingWater.app */;
@@ -102,6 +105,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A10000000000000000000022 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				A10000000000000000000025 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A10000000000000000000005 /* Products */;
@@ -262,6 +266,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		A10000000000000000000025 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stripe/stripe-ios-spm";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 24.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -269,6 +281,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A10000000000000000000022 /* XCRemoteSwiftPackageReference "supabase-swift" */;
 			productName = Supabase;
+		};
+		A10000000000000000000024 /* StripePaymentSheet */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000025 /* XCRemoteSwiftPackageReference "stripe-ios-spm" */;
+			productName = StripePaymentSheet;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

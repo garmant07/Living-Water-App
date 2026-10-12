@@ -1,17 +1,20 @@
 import Foundation
 
-// Every web address the app opens that isn't partner data, in one place.
+// Web addresses the app opens that aren't partner data, in one place.
 enum AppLinks {
-    // TODO: replace with exact shop page URL
-    private static let shopAddress = "https://livingwaterco.com"
+    // TODO: add the real Privacy Policy address before launch
+    private static let privacyPolicyAddress = ""
+    // TODO: add the real Terms of Sale and Refund Policy address before launch
+    private static let termsAddress = ""
 
-    /// The online store. nil if the address above is ever mistyped, so a
-    /// typo can never crash the app.
-    static var shop: URL? { webURL(shopAddress) }
+    static var privacyPolicy: URL? { webURL(privacyPolicyAddress) }
+    static var terms: URL? { webURL(termsAddress) }
 
-    /// Only proper secure web links count.
+    /// Only proper secure web links count. A mistyped address gives nil,
+    /// so a typo can never crash the app.
     static func webURL(_ text: String) -> URL? {
-        guard let url = URL(string: text), url.scheme == "https", url.host() != nil else { return nil }
+        guard let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
+              url.scheme == "https", url.host() != nil else { return nil }
         return url
     }
 }

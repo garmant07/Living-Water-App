@@ -128,12 +128,27 @@ struct HomeView: View {
         }
         // The scan button stays fixed at the very bottom.
         .safeAreaInset(edge: .bottom) {
-            Button {
-                router.open(.scan)
-            } label: {
-                Label("Scan a bottle", systemImage: "qrcode.viewfinder")
+            HStack(spacing: 10) {
+                Button {
+                    router.open(.scan)
+                } label: {
+                    Label("Scan a bottle", systemImage: "qrcode.viewfinder")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+
+                // The way in to signing in, orders and (for the team) the operator tools.
+                Button {
+                    router.open(.account)
+                } label: {
+                    Image(systemName: "person")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Theme.foreground)
+                        .frame(width: 50, height: 50)
+                        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Theme.foreground.opacity(0.7), lineWidth: 1.5))
+                        .contentShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .accessibilityLabel("Account")
             }
-            .buttonStyle(PrimaryButtonStyle())
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .background(Theme.background)
@@ -195,8 +210,10 @@ struct HomeView: View {
     private func showNextMessage() {
         // Opening the app triggers this twice in a row; once is enough.
         guard Date().timeIntervalSince(messageChangedAt) > 1 else { return }
-        let others = store.homeMessages.filter { $0 != message }
-        message = others.randomElement() ?? store.homeMessages.first
+        // Verses edited by the team online win; otherwise the built-in ones.
+        let all = CloudContent.shared.homeMessages ?? store.homeMessages
+        let others = all.filter { $0 != message }
+        message = others.randomElement() ?? all.first
         messageChangedAt = Date()
     }
 

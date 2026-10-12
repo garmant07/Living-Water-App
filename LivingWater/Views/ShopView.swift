@@ -1,21 +1,13 @@
 import SwiftUI
 
-/// A web page waiting to be shown in the in-app browser.
-private struct BrowserPage: Identifiable {
-    let url: URL
-    var id: URL { url }
-}
-
-// The Shop page: every product as a photo with its name. Tapping one opens
-// that product's page on the website, in the in-app browser, where it is
-// bought. The app itself never handles a cart or a payment.
+// The Shop: every product as a photo with its name and price. Customers
+// browse, add to the cart and pay inside the app.
 struct ShopView: View {
+    @Environment(Router.self) private var router
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    @State private var products: [Product] = []
-    @State private var browserPage: BrowserPage?
-
-    private static var didPreview = false
+    private let shop = ShopStore.shared
+    private let cart = CartStore.shared
 
     /// Two columns, or one when the phone's text size is set large.
     private var columns: [GridItem] {
@@ -23,23 +15,20 @@ struct ShopView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Shop")
-                        .font(.largeTitle.weight(.semibold))
-                        .foregroundStyle(Theme.foreground)
-                        .accessibilityAddTraits(.isHeader)
-                    Text("Every purchase helps bring clean water to communities in need.")
-                        .font(.title3)
-                        .foregroundStyle(Theme.muted)
-                }
+        PageScroll {
+            VStack(alignment: .leading, spacing: 8) {
+                PageTitle("Shop")
+                Text("Every purchase helps bring clean water to communities in need.")
+                    .font(.title3)
+                    .foregroundStyle(Theme.muted)
+            }
 
+            if shop.products.isEmpty {
+                emptyState
+            } else {
                 LazyVGrid(columns: columns, spacing: 18) {
-                    ForEach(products) { product in
-                        Button {
-                            open(product.productURL)
-                        } label: {
+                    ForEach(shop.products) { product in
+                        NavigationLink(value: AppRoute.product(product)) {
                             ProductCard(product: product)
                         }
                         .buttonStyle(.plain)
@@ -47,68 +36,78 @@ struct ShopView: View {
                         .accessibilityLabel(spokenLabel(for: product))
                     }
                 }
-
-                Button("View full store") {
-                    browserPage = AppLinks.shop.map(BrowserPage.init)
+            }
+        }
+        .refreshable { await shop.load() }
+        .task { await shop.load() }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink(value: AppRoute.cart) {
+                    Image(systemName: "cart")
+                        .overlay(alignment: .topTrailing) {
+                            if cart.itemCount > 0 {
+                                Text("\(cart.itemCount)")
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(Theme.background)
+                                    .padding(.horizontal, 5)
+                                    .frame(minWidth: 18, minHeight: 18)
+                                    .background(Theme.brand, in: Capsule())
+                                    .offset(x: 12, y: -10)
+                            }
+                        }
                 }
-                .buttonStyle(SecondaryButtonStyle())
-                .accessibilityHint("Opens the Living Water store")
+                .accessibilityLabel("Cart, \(cart.itemCount) \(cart.itemCount == 1 ? "item" : "items")")
+            }
+        }
+    }
 
-                Text("You'll buy on the Living Water Co. website. The app never takes a payment.")
-                    .font(.footnote)
+    @ViewBuilder
+    private var emptyState: some View {
+        if shop.isLoading {
+            ProgressView().tint(Theme.foreground).frame(maxWidth: .infinity).padding(.top, 40)
+        } else if shop.loadFailed {
+            Card {
+                Text("We couldn't load the shop")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+                Text("Check your connection and try again.")
+                    .foregroundStyle(Theme.muted)
+                Button("Try again") { Task { await shop.load() } }
+                    .buttonStyle(PrimaryButtonStyle())
+            }
+        } else {
+            Card {
+                Text("Nothing in the shop yet")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.foreground)
+                Text("Products will appear here soon.")
                     .foregroundStyle(Theme.muted)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 4)
-            .padding(.bottom, 24)
-        }
-        .background(Theme.background)
-        .navigationBarTitleDisplayMode(.inline)
-        .task {
-            products = await ProductCatalog.load()
-            #if DEBUG
-            // For testing: launch with "-previewProduct sample-1" to open a product's page.
-            if !Self.didPreview, let id = UserDefaults.standard.string(forKey: "previewProduct"),
-               let product = products.first(where: { $0.id == id }) {
-                Self.didPreview = true
-                open(product.productURL)
-            }
-            #endif
-        }
-        // Closing the browser lands back here, at the same place in the grid.
-        .fullScreenCover(item: $browserPage) { page in
-            SafariView(url: page.url)
-                .ignoresSafeArea()
         }
     }
 
-    /// Opens a web address in the in-app browser. A bad address does nothing.
-    private func open(_ address: String) {
-        browserPage = AppLinks.webURL(address).map(BrowserPage.init)
-    }
-
-    private func spokenLabel(for product: Product) -> String {
-        [product.name, product.badge, product.price, "opens product page"]
+    private func spokenLabel(for product: ShopProduct) -> String {
+        [product.name, product.badge.isEmpty ? nil : product.badge, Format.price(cents: product.priceCents), product.isSoldOut ? "sold out" : nil]
             .compactMap { $0 }
             .joined(separator: ", ")
     }
 }
 
-// One product: its photo, then its name, and its price if there is one.
+// One product in the grid: its photo, then its name and price.
 private struct ProductCard: View {
-    let product: Product
+    let product: ShopProduct
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // A clear 4:5 box sets the shape; the photo fills it and is trimmed to fit.
             Color.clear
                 .aspectRatio(4.0 / 5.0, contentMode: .fit)
-                .overlay { photo }
+                .overlay { RemotePhoto(address: product.imageUrls.first) }
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .overlay(RoundedRectangle(cornerRadius: 20).stroke(Theme.border))
                 .overlay(alignment: .topLeading) {
-                    if let badge = product.badge {
-                        Text(badge)
+                    if product.isSoldOut || !product.badge.isEmpty {
+                        Text(product.isSoldOut ? "Sold out" : product.badge)
                             .font(.caption.weight(.bold))
                             .foregroundStyle(Theme.background)
                             .padding(.horizontal, 10)
@@ -123,12 +122,9 @@ private struct ProductCard: View {
                 .foregroundStyle(Theme.foreground)
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
-
-            if let price = product.price {
-                Text(price)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.foreground)
-            }
+            Text(Format.price(cents: product.priceCents))
+                .font(.subheadline)
+                .foregroundStyle(Theme.foreground)
             if product.isSample {
                 SampleBadge()
             }
@@ -136,45 +132,82 @@ private struct ProductCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
     }
+}
 
-    @ViewBuilder
-    private var photo: some View {
-        if let name = product.imageName, UIImage(named: name) != nil {
-            Image(name)
-                .resizable()
-                .scaledToFill()
-        } else if let url = product.imageURL.flatMap(AppLinks.webURL) {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .scaledToFill()
-                case .failure:
-                    fallback
-                default:
-                    // Still loading: a plain panel in the app's blue.
-                    Theme.widget
+// One product's own page: photos to swipe through, the details, and Add to cart.
+struct ProductDetailView: View {
+    let product: ShopProduct
+
+    @Environment(Router.self) private var router
+    @State private var quantity = 1
+    @State private var justAdded = false
+
+    private let cart = CartStore.shared
+
+    var body: some View {
+        PageScroll {
+            gallery
+
+            VStack(alignment: .leading, spacing: 8) {
+                PageTitle(product.name)
+                Text(Format.price(cents: product.priceCents))
+                    .font(.title2)
+                    .foregroundStyle(Theme.foreground)
+                if product.isSample {
+                    SampleBadge()
                 }
             }
-        } else {
-            fallback
+
+            if !product.description.isEmpty {
+                Text(product.description)
+                    .font(.body)
+                    .lineSpacing(4)
+                    .foregroundStyle(Theme.foreground)
+            }
+
+            if product.isSoldOut {
+                Notice(text: "This is sold out for now.")
+            } else {
+                Stepper(value: $quantity, in: 1...min(product.stockQuantity ?? 20, 20)) {
+                    Text("Quantity: \(quantity)")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Theme.foreground)
+                }
+                .frame(minHeight: 44)
+
+                Button {
+                    cart.add(product, quantity: quantity)
+                    justAdded = true
+                } label: {
+                    Label("Add to cart", systemImage: "cart.badge.plus")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+
+                if justAdded {
+                    Notice(text: "Added to your cart.", isProblem: false)
+                    Button("View cart") { router.path.append(AppRoute.cart) }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+
+            Text("Your purchase helps fund clean water through our ministry partners.")
+                .font(.footnote)
+                .foregroundStyle(Theme.muted)
         }
     }
 
-    /// Shown when there is no photo or it fails to load. Never a broken image.
-    private var fallback: some View {
-        Theme.widget
-            .overlay {
-                Image(systemName: "drop")
-                    .font(.system(size: 44))
-                    .foregroundStyle(Theme.foreground.opacity(0.85))
-            }
-    }
-}
+    private var gallery: some View {
+        let photos: [String?] = product.imageUrls.isEmpty ? [nil] : product.imageUrls
 
-#Preview {
-    NavigationStack {
-        ShopView()
+        return TabView {
+            ForEach(Array(photos.enumerated()), id: \.offset) { index, address in
+                RemotePhoto(address: address)
+                    .accessibilityLabel("\(product.name), photo \(index + 1) of \(photos.count)")
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: photos.count > 1 ? .always : .never))
+        .aspectRatio(4.0 / 5.0, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .overlay(RoundedRectangle(cornerRadius: 24).stroke(Theme.border))
     }
 }

@@ -6,5 +6,7 @@
 	<string>https://YOUR-PROJECT.supabase.co</string>
 	<key>SUPABASE_ANON_KEY</key>
 	<string>paste-the-anon-public-key-here</string>
+	<key>STRIPE_PUBLISHABLE_KEY</key>
+	<string>pk_test_paste-the-publishable-key-here</string>
 </dict>
 </plist>
