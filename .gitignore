@@ -6,3 +6,6 @@ xcuserdata/
 DerivedData/
 build/
 *.xcuserstate
+
+# Local backend settings (project address and public keys). Never commit.
+LivingWater/Config/BackendConfig.plist
