@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The pages that open from the home page.
 enum Page: String, Hashable {
-    case globe, hub, scan, journey
+    case globe, hub, scan, journey, donate, shop, community
 }
 
 /// Keeps track of which pages are open, so any screen can open another
@@ -37,6 +37,9 @@ struct LivingWaterApp: App {
                         case .hub: HubView()
                         case .scan: ScanView()
                         case .journey: JourneyView()
+                        case .donate: DonateView()
+                        case .shop: ShopView()
+                        case .community: CommunityView()
                         }
                     }
                     .navigationDestination(for: Community.self) { community in
@@ -44,6 +47,9 @@ struct LivingWaterApp: App {
                     }
                     .navigationDestination(for: Partner.self) { partner in
                         PartnerDetailView(partner: partner)
+                    }
+                    .navigationDestination(for: DonateRoute.self) { route in
+                        DonatePartnerView(partner: route.partner)
                     }
                     .navigationDestination(for: BottleRoute.self) { route in
                         BottleView(code: route.code)

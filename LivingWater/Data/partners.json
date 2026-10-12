@@ -99,7 +99,17 @@
     "featureStory": {
       "title": "Project Living Water",
       "body": "Water Mission's very first effort was called \"Project Living Water,\" and the treatment unit it still builds today is named the Living Water Treatment System. Long before our bottles existed, the same two words were already bringing safe water to people."
-    }
+    },
+    "tagline": "Christian engineering nonprofit bringing safe water to the world.",
+    "about": "Founded in 2001 by George and Molly Greene and based in North Charleston, South Carolina, Water Mission designs and builds safe-water, sanitation, and hygiene solutions for communities, refugee camps, and disaster zones.",
+    "keyFacts": [
+      "8M+ people served in 60+ countries since 2001",
+      "Permanent programs in Honduras, Indonesia, Kenya, Malawi, Mexico, Peru, and Tanzania",
+      "Refugee and disaster response worldwide",
+      "Top Charity Navigator rating 19 years running"
+    ],
+    "donateUrl": "https://watermission.org",
+    "donateUrlConfirmed": false
   },
   {
     "id": "water-for-good",
@@ -144,12 +154,22 @@
         "asOf": "2026-10"
       }
     ],
-    "statsNote": "Goal: double its impact by 2028."
+    "statsNote": "Goal: double its impact by 2028.",
+    "tagline": "Lasting clean water, partnering with local churches.",
+    "about": "Founded in 2004 in the Central African Republic and merged with Lifewater International in 2024, Water for Good works alongside local churches through its three-year \"Vision of a Healthy Village\" model.",
+    "keyFacts": [
+      "Works in Cambodia, Central African Republic, Ethiopia, Uganda, and Tanzania",
+      "Reliable water for 1.3M+ people every year",
+      "90% of its water points stay working",
+      "Completed villages see a median 90% drop in childhood diarrhea"
+    ],
+    "donateUrl": "https://waterforgood.org",
+    "donateUrlConfirmed": false
   },
   {
     "id": "convoy-of-hope",
     "name": "Convoy of Hope",
-    "website": "https://convoyofhope.org/donate/water/",
+    "website": "https://convoyofhope.org",
     "founded": 1994,
     "headquarters": "Springfield, Missouri",
     "description": "A global faith-based organization serving people through wells, water filters, community facilities, and disaster relief.",
@@ -178,6 +198,16 @@
         "asOf": "2026-10"
       }
     ],
-    "statsNote": "Convoy of Hope has not yet published a water-only total. The figure shown covers all of its programs, not just water."
+    "statsNote": "Convoy of Hope has not yet published a water-only total. The figure shown covers all of its programs, not just water.",
+    "tagline": "Faith-based relief bringing water where it's needed most.",
+    "about": "Founded in 1994 and based in Springfield, Missouri, Convoy of Hope serves people around the world through relief, food, and community programs, including clean water.",
+    "keyFacts": [
+      "350M+ people served across all programs",
+      "Wells in Tanzania and Niger",
+      "Water filters in Ukraine and Indonesia",
+      "Bottled water for U.S. disaster relief"
+    ],
+    "donateUrl": "https://convoyofhope.org/donate/water/",
+    "donateUrlConfirmed": true
   }
 ]

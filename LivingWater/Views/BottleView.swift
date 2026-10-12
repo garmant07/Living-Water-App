@@ -116,7 +116,7 @@ struct BottleView: View {
     @ViewBuilder
     private func saveButton(code: String) -> some View {
         if journey.isSaved(code) {
-            Label("Saved to your journey", systemImage: "checkmark.circle.fill")
+            Label("Saved to What you've done", systemImage: "checkmark.circle.fill")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(Theme.foreground)
                 .frame(maxWidth: .infinity, minHeight: 50)
@@ -126,7 +126,7 @@ struct BottleView: View {
             Button {
                 journey.save(code)
             } label: {
-                Label("Save this bottle to my journey", systemImage: "plus.circle.fill")
+                Label("Save this bottle", systemImage: "plus.circle.fill")
             }
             .buttonStyle(PrimaryButtonStyle())
         }
@@ -151,12 +151,12 @@ struct BottleView: View {
                 .lineSpacing(4)
                 .foregroundStyle(Theme.foreground)
 
-            Text("Every bottle still helps. You can see everything we're doing together in the Community Hub.")
+            Text("Every bottle still helps. You can still see everything we're doing together.")
                 .font(.body)
                 .lineSpacing(4)
                 .foregroundStyle(Theme.muted)
 
-            Button("Go to the Community Hub") {
+            Button("See what we've done") {
                 router.goHome()
                 router.open(.hub)
             }

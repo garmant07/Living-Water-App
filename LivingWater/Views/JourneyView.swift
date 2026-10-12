@@ -45,7 +45,7 @@ struct JourneyView: View {
             .background(Theme.background)
             .navigationBarTitleDisplayMode(.inline)
             .confirmationDialog(
-                "Remove this bottle from your journey?",
+                "Remove this bottle?",
                 isPresented: Binding(
                     get: { bottleToRemove != nil },
                     set: { if !$0 { bottleToRemove = nil } }
@@ -65,7 +65,7 @@ struct JourneyView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Personal Journey")
+            Text("What you've done")
                 .font(.largeTitle.weight(.semibold))
                 .foregroundStyle(Theme.foreground)
                 .accessibilityAddTraits(.isHeader)

@@ -6,6 +6,9 @@ struct SampleBadge: View {
     var body: some View {
         Text("Sample data")
             .font(.caption.weight(.semibold))
+            // Always one line, even with large text.
+            .lineLimit(1)
+            .fixedSize()
             .foregroundStyle(Theme.sampleForeground)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)

@@ -160,6 +160,7 @@ struct JourneyLevelsView: View {
                 .foregroundStyle(Theme.muted)
             if let url = URL(string: basis.sourceUrl) {
                 Link("Source: Sphere Handbook, checked \(Format.month(basis.asOf))", destination: url)
+                    .multilineTextAlignment(.leading)
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Theme.foreground)
                     .frame(minHeight: 44, alignment: .leading)

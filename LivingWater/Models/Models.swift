@@ -47,6 +47,24 @@ struct Partner: Codable, Identifiable, Hashable {
     let statsNote: String?
     /// An optional longer story to feature in the app.
     let featureStory: FeatureStory?
+
+    // Used by the Donate Directly pages.
+    /// One line for the list of partners.
+    let tagline: String
+    /// A few sentences for the partner's donate page.
+    let about: String
+    /// Two to four short facts.
+    let keyFacts: [String]
+    /// The page that opens in Safari when someone taps Donate.
+    let donateUrl: String
+    /// false = TODO: confirm the exact donation page with the partner.
+    /// Until then the link goes to the partner's main website.
+    let donateUrlConfirmed: Bool
+}
+
+/// A partner on its way to the donate page.
+struct DonateRoute: Hashable {
+    let partner: Partner
 }
 
 enum ProjectStatus: String, Codable {

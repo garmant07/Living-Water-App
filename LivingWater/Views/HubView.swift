@@ -47,11 +47,11 @@ struct HubView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Community Hub")
+            Text("What we've done")
                 .font(.largeTitle.weight(.semibold))
                 .foregroundStyle(Theme.foreground)
                 .accessibilityAddTraits(.isHeader)
-            Text("What we've done together, and how far there is still to go.")
+            Text("Together so far, and how far there is still to go.")
                 .font(.title3)
                 .foregroundStyle(Theme.muted)
         }

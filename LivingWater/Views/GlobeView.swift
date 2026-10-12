@@ -7,6 +7,7 @@ import SwiftUI
 struct GlobeView: View {
     @Environment(Router.self) private var router
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var camera = GlobeView.startCamera
     /// Where the globe is gliding to after a dot or list row is chosen.
@@ -96,18 +97,32 @@ struct GlobeView: View {
         }
     }
 
+    /// With large text the words need more room than one screen has, so the
+    /// page scrolls and the globe keeps a fixed height.
+    @ViewBuilder
     private var globePage: some View {
+        if dynamicTypeSize >= .xxLarge {
+            ScrollView {
+                globeContent(globeHeight: 300)
+            }
+        } else {
+            globeContent(globeHeight: nil)
+        }
+    }
+
+    private func globeContent(globeHeight: CGFloat?) -> some View {
         VStack(spacing: 0) {
             Text(message)
                 .font(.title2.weight(.semibold))
                 .foregroundStyle(Theme.foreground)
                 .multilineTextAlignment(.center)
-                .lineLimit(2)
+                .lineLimit(4)
                 .minimumScaleFactor(0.8)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 24)
-                // A fixed height, so the globe doesn't shift when the words change.
+                // Room for two lines, so the globe doesn't shift when the words change.
                 .frame(maxWidth: .infinity)
-                .frame(height: 64)
+                .frame(minHeight: 64)
                 .accessibilityAddTraits(.isHeader)
 
             FlatGlobe(
@@ -121,6 +136,7 @@ struct GlobeView: View {
                 },
                 onSelect: select
             )
+            .frame(height: globeHeight)
             // When zoomed in, the globe fades out softly at the top
             // and bottom instead of ending in a hard line.
             .mask(
@@ -136,7 +152,10 @@ struct GlobeView: View {
                 )
             )
 
+            // The words below take the room they need, even with large text;
+            // the globe uses whatever is left.
             lowerPart
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .frame(maxWidth: .infinity, minHeight: 190, alignment: .top)
