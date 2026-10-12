@@ -40,6 +40,7 @@ final class ShopStore {
             products = rows
             loadFailed = false
             DiskCache.save(rows, as: "products")
+            CartStore.shared.matchToShop(rows)
         } catch {
             loadFailed = products.isEmpty
         }
@@ -60,6 +61,8 @@ final class CartStore {
     static let shared = CartStore()
 
     private(set) var lines: [CartLine] = []
+    /// Items the last tidy-up took out because they are no longer for sale.
+    var removedNames: [String] = []
     private let storageKey = "cart.lines"
 
     var itemCount: Int { lines.reduce(0) { $0 + $1.quantity } }
@@ -94,6 +97,25 @@ final class CartStore {
         } else {
             lines[index].quantity = min(quantity, 99)
         }
+        save()
+    }
+
+    /// Brings the cart in line with what the shop sells right now: anything no
+    /// longer for sale is taken out, and names and prices are refreshed.
+    /// Returns nothing; `removedNames` says what was taken out.
+    func matchToShop(_ products: [ShopProduct]) {
+        var kept: [CartLine] = []
+        var removed: [String] = []
+        for line in lines {
+            if let current = products.first(where: { $0.id == line.id }), !current.isSoldOut {
+                kept.append(CartLine(product: current, quantity: line.quantity))
+            } else {
+                removed.append(line.product.name)
+            }
+        }
+        guard kept != lines else { return }
+        lines = kept
+        removedNames = removed
         save()
     }
 

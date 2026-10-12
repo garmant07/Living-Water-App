@@ -13,6 +13,10 @@ struct CartView: View {
         PageScroll {
             PageTitle("Your cart")
 
+            if !cart.removedNames.isEmpty {
+                Notice(text: "No longer available, so we took it out of your cart: \(cart.removedNames.joined(separator: ", ")).")
+            }
+
             if cart.lines.isEmpty {
                 Card {
                     Text("Your cart is empty")
@@ -81,6 +85,9 @@ struct CartView: View {
                 }
             }
         }
+        // Check the cart against what the shop sells right now.
+        .task { await ShopStore.shared.load() }
+        .onDisappear { cart.removedNames = [] }
         // Signing in happens on a sheet, so the cart is still here afterwards.
         .sheet(isPresented: $showingSignIn) {
             NavigationStack {
