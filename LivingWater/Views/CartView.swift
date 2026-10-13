@@ -204,9 +204,7 @@ struct CheckoutView: View {
             if let terms = AppLinks.terms {
                 Link("Terms of Sale and Refund Policy", destination: terms).frame(minHeight: 44)
             }
-            if let privacy = AppLinks.privacyPolicy {
-                Link("Privacy Policy", destination: privacy).frame(minHeight: 44)
-            }
+            NavigationLink("Privacy Policy", value: Page.privacy).frame(minHeight: 44)
         }
         .font(.footnote.weight(.semibold))
         .foregroundStyle(Theme.foreground)

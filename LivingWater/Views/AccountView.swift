@@ -31,6 +31,14 @@ struct AccountView: View {
                     .foregroundStyle(Theme.muted)
                 SignInForm(onSignedIn: {})
             }
+
+            NavigationLink(value: Page.privacy) {
+                Text("Privacy Policy")
+                    .font(.body.weight(.semibold))
+                    .underline()
+                    .foregroundStyle(Theme.foreground)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
         }
         .onAppear { name = auth.displayName }
         .onChange(of: auth.displayName) { _, new in name = new }
