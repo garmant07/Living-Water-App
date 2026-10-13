@@ -141,10 +141,13 @@ private struct EditSheet<Content: View>: View {
                     Notice(text: problem)
                 }
                 if canDelete {
-                    Button("Delete", role: .destructive) { confirmingDelete = true }
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Theme.foreground)
-                        .frame(maxWidth: .infinity, minHeight: 44)
+                    Button(role: .destructive) {
+                        confirmingDelete = true
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .disabled(isWorking)
                 }
             }
             .scrollDismissesKeyboard(.interactively)
