@@ -118,7 +118,6 @@ struct CheckoutView: View {
     @State private var problem: String?
     @State private var quote: CheckoutResponse?
     @State private var paymentSheet: PaymentSheet?
-    @State private var showingPayment = false
     @State private var isPaid = false
 
     private let cart = CartStore.shared
@@ -142,11 +141,6 @@ struct CheckoutView: View {
         .onAppear {
             if email.isEmpty { email = auth.email ?? "" }
             if address.name.isEmpty { address.name = auth.displayName }
-        }
-        .background {
-            if let paymentSheet {
-                Color.clear.paymentSheet(isPresented: $showingPayment, paymentSheet: paymentSheet, onCompletion: finish)
-            }
         }
     }
 
@@ -242,11 +236,24 @@ struct CheckoutView: View {
             // TODO: switch on Apple Pay here once the paid Apple Developer account
             // and a merchant ID exist: settings.applePay = .init(merchantId:merchantCountryCode:)
             quote = response
-            paymentSheet = PaymentSheet(paymentIntentClientSecret: response.clientSecret, configuration: settings)
-            showingPayment = true
+            let sheet = PaymentSheet(paymentIntentClientSecret: response.clientSecret, configuration: settings)
+            paymentSheet = sheet
+            guard let screen = Self.topScreen() else {
+                problem = "We couldn't open the payment page. Please try again."
+                return
+            }
+            sheet.present(from: screen, completion: finish)
         } catch {
             problem = error.localizedDescription
         }
+    }
+
+    /// The screen currently in front, which Stripe's payment page slides up over.
+    private static func topScreen() -> UIViewController? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        var screen = scenes.flatMap(\.windows).first(where: \.isKeyWindow)?.rootViewController
+        while let next = screen?.presentedViewController { screen = next }
+        return screen
     }
 
     private func finish(_ result: PaymentSheetResult) {
