@@ -64,9 +64,11 @@ private struct OperatorList<Item: Identifiable & Hashable, Row: View>: View {
     let onMove: ([Item]) -> Void
     let onOpen: (Item) -> Void
     let load: () async -> Void
+    let onDelete: (Item) async -> Void
     @ViewBuilder let row: (Item) -> Row
 
     @State private var hasLoaded = false
+    @State private var deleting: Item?
 
     var body: some View {
         List {
@@ -85,8 +87,23 @@ private struct OperatorList<Item: Identifiable & Hashable, Row: View>: View {
 
             Section {
                 ForEach(items) { item in
-                    Button { onOpen(item) } label: { row(item) }
-                        .listRowBackground(Theme.surface)
+                    HStack(spacing: 4) {
+                        Button { onOpen(item) } label: {
+                            row(item)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .contentShape(Rectangle())
+                        }
+                        Button { deleting = item } label: {
+                            Image(systemName: "trash")
+                                .font(.body.weight(.semibold))
+                                .foregroundStyle(Theme.foreground)
+                                .frame(width: 44, height: 44)
+                        }
+                        .accessibilityLabel("Delete")
+                    }
+                    // Lets the row hold two separate buttons instead of one big one.
+                    .buttonStyle(.borderless)
+                    .listRowBackground(Theme.surface)
                 }
                 .onMove { from, to in
                     items.move(fromOffsets: from, toOffset: to)
@@ -106,6 +123,17 @@ private struct OperatorList<Item: Identifiable & Hashable, Row: View>: View {
                 Button(action: onAdd) { Image(systemName: "plus") }
                     .accessibilityLabel("Add")
             }
+        }
+        .confirmationDialog(
+            "Delete this for good?",
+            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+            titleVisibility: .visible,
+            presenting: deleting
+        ) { item in
+            Button("Delete", role: .destructive) {
+                Task { await onDelete(item) }
+            }
+            Button("Keep it", role: .cancel) {}
         }
         .refreshable { await load() }
         .task {
@@ -293,7 +321,15 @@ struct OperatorProductsView: View {
                 }
             },
             onOpen: { editing = $0 },
-            load: load
+            load: load,
+            onDelete: { item in
+                do {
+                    try await OperatorService.deleteProduct(item.id)
+                } catch {
+                    problem = error.localizedDescription
+                }
+                await load()
+            }
         ) { product in
             HStack(spacing: 12) {
                 RemotePhoto(address: product.imageUrls.first)
@@ -406,7 +442,16 @@ struct OperatorMessagesView: View {
             },
             onMove: { _ in },
             onOpen: { editing = $0 },
-            load: load
+            load: load,
+            onDelete: { item in
+                do {
+                    try await OperatorService.deleteMessage(item.id)
+                    await CloudContent.shared.loadMessages()
+                } catch {
+                    problem = error.localizedDescription
+                }
+                await load()
+            }
         ) { message in
             VStack(alignment: .leading, spacing: 2) {
                 Text(message.text).lineLimit(2)
@@ -521,7 +566,16 @@ struct OperatorStoriesView: View {
             },
             onMove: { _ in },
             onOpen: { editing = $0 },
-            load: load
+            load: load,
+            onDelete: { item in
+                do {
+                    try await OperatorService.deleteStory(item.id)
+                    await CloudContent.shared.loadStories()
+                } catch {
+                    problem = error.localizedDescription
+                }
+                await load()
+            }
         ) { story in
             VStack(alignment: .leading, spacing: 2) {
                 Text(story.title).font(.headline)
