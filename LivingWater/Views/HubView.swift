@@ -51,7 +51,7 @@ struct HubView: View {
                 .font(.largeTitle.weight(.semibold))
                 .foregroundStyle(Theme.foreground)
                 .accessibilityAddTraits(.isHeader)
-            Text("Together so far, and how far there is still to go.")
+            EditableText(key: "hub_intro", fallback: "Together so far, and how far there is still to go.", name: "What we've done introduction")
                 .font(.title3)
                 .foregroundStyle(Theme.muted)
         }

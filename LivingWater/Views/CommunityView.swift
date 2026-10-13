@@ -9,9 +9,10 @@ struct CommunityView: View {
         PageScroll {
             VStack(alignment: .leading, spacing: 8) {
                 PageTitle("Community")
-                Text("Stories from the people we serve.")
+                EditableText(key: "community_intro", fallback: "Stories from the people we serve.", name: "Community introduction")
                     .font(.title3)
                     .foregroundStyle(Theme.muted)
+                EditShortcut(title: "Edit stories", route: .operatorStories)
             }
 
             if content.stories.isEmpty {

@@ -30,14 +30,16 @@ struct FeatureStory: Codable, Hashable {
 
 struct Partner: Codable, Identifiable, Hashable {
     let id: String
-    let name: String
-    let website: String
+    var name: String
+    var website: String
     let founded: Int
     let headquarters: String?
     let description: String
-    let faithStatement: String
+    var faithStatement: String
     /// The logo's name in Assets. nil until the partner supplies one.
     let logo: String?
+    /// A logo uploaded by the team online. Used ahead of the one in Assets.
+    var logoUrl: String?
     let countries: [String]
     /// What the partner does on the ground.
     let work: [String]
@@ -50,16 +52,16 @@ struct Partner: Codable, Identifiable, Hashable {
 
     // Used by the Donate Directly pages.
     /// One line for the list of partners.
-    let tagline: String
+    var tagline: String
     /// A few sentences for the partner's donate page.
-    let about: String
+    var about: String
     /// Two to four short facts.
-    let keyFacts: [String]
+    var keyFacts: [String]
     /// The page that opens in Safari when someone taps Donate.
-    let donateUrl: String
+    var donateUrl: String
     /// false = TODO: confirm the exact donation page with the partner.
     /// Until then the link goes to the partner's main website.
-    let donateUrlConfirmed: Bool
+    var donateUrlConfirmed: Bool
 }
 
 /// A partner on its way to the donate page.

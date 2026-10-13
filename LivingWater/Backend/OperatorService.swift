@@ -1,8 +1,8 @@
 import Foundation
 import Supabase
 
-// Everything an operator can change: products, home page verses and
-// community stories. The database refuses these calls from anyone whose
+// Everything an operator can change: products, home page verses,
+// community stories, partners and short page texts. The database refuses these calls from anyone whose
 // account isn't an operator, so this file is not what keeps content safe.
 
 enum OperatorService {
@@ -122,6 +122,28 @@ enum OperatorService {
     static func deleteStory(_ id: UUID) async throws {
         try await run("The story couldn't be deleted. Please try again.") { client in
             try await client.from("community_stories").delete().eq("id", value: id.uuidString).execute()
+        }
+    }
+
+    // MARK: Partners
+
+    static func allPartners() async throws -> [CloudPartner] {
+        try await fetch("partners", orderedBy: "sort_order")
+    }
+
+    static func save(_ partner: CloudPartner) async throws {
+        try await run("The partner didn't save. Please try again.") { client in
+            try await client.from("partners").upsert(partner).execute()
+        }
+    }
+
+    // MARK: Page texts
+
+    static func saveText(_ text: String, key: String) async throws {
+        try await run("The text didn't save. Please try again.") { client in
+            try await client.from("content_blocks")
+                .upsert(["key": key, "text": text, "updated_at": now])
+                .execute()
         }
     }
 }

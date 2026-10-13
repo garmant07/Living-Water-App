@@ -8,6 +8,7 @@ import SwiftUI
 
 struct OperatorDashboardView: View {
     private let auth = AuthStore.shared
+    private let content = CloudContent.shared
 
     var body: some View {
         PageScroll {
@@ -24,6 +25,20 @@ struct OperatorDashboardView: View {
                 link("Orders", "See orders and add tracking links", "shippingbox", .operatorOrders)
                 link("Home page verses", "The lines that rotate under the title", "text.quote", .operatorMessages)
                 link("Community stories", "Write and publish stories", "person.3", .operatorStories)
+                link("Ministry partners", "Wording, links and logos", "heart", .operatorPartners)
+
+                Card {
+                    Toggle(isOn: Bindable(content).isEditing) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Edit Mode").font(.headline)
+                            Text("Shows a pencil next to words you can change as you look around the app. Only you see it.")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.muted)
+                        }
+                    }
+                    .foregroundStyle(Theme.foreground)
+                    .tint(Theme.accent)
+                }
             }
         }
     }
@@ -60,11 +75,13 @@ private struct OperatorList<Item: Identifiable & Hashable, Row: View>: View {
     @Binding var items: [Item]
     @Binding var problem: String?
     let canReorder: Bool
-    let onAdd: () -> Void
+    /// nil hides the + button, for lists that can't be added to.
+    let onAdd: (() -> Void)?
     let onMove: ([Item]) -> Void
     let onOpen: (Item) -> Void
     let load: () async -> Void
-    let onDelete: (Item) async -> Void
+    /// nil hides the trash cans, for lists that can't be deleted from.
+    let onDelete: ((Item) async -> Void)?
     @ViewBuilder let row: (Item) -> Row
 
     @State private var hasLoaded = false
@@ -90,16 +107,24 @@ private struct OperatorList<Item: Identifiable & Hashable, Row: View>: View {
                     HStack(spacing: 4) {
                         Button { onOpen(item) } label: {
                             row(item)
+                                .multilineTextAlignment(.leading)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .contentShape(Rectangle())
                         }
-                        Button { deleting = item } label: {
-                            Image(systemName: "trash")
+                        if onDelete != nil {
+                            Button { deleting = item } label: {
+                                Image(systemName: "trash")
+                                    .font(.body.weight(.semibold))
+                                    .foregroundStyle(Theme.foreground)
+                                    .frame(width: 44, height: 44)
+                            }
+                            .accessibilityLabel("Delete")
+                        } else {
+                            Image(systemName: "chevron.right")
                                 .font(.body.weight(.semibold))
                                 .foregroundStyle(Theme.foreground)
-                                .frame(width: 44, height: 44)
+                                .accessibilityHidden(true)
                         }
-                        .accessibilityLabel("Delete")
                     }
                     // Lets the row hold two separate buttons instead of one big one.
                     .buttonStyle(.borderless)
@@ -119,9 +144,11 @@ private struct OperatorList<Item: Identifiable & Hashable, Row: View>: View {
             if canReorder {
                 ToolbarItem(placement: .topBarTrailing) { EditButton() }
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: onAdd) { Image(systemName: "plus") }
-                    .accessibilityLabel("Add")
+            if let onAdd {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: onAdd) { Image(systemName: "plus") }
+                        .accessibilityLabel("Add")
+                }
             }
         }
         .confirmationDialog(
@@ -131,7 +158,7 @@ private struct OperatorList<Item: Identifiable & Hashable, Row: View>: View {
             presenting: deleting
         ) { item in
             Button("Delete", role: .destructive) {
-                Task { await onDelete(item) }
+                Task { await onDelete?(item) }
             }
             Button("Keep it", role: .cancel) {}
         }
@@ -801,6 +828,120 @@ struct OperatorOrderView: View {
             } catch {
                 notice = (error.localizedDescription, true)
             }
+        }
+    }
+}
+
+// MARK: Ministry partners
+
+// The three partners are part of how the app is built, so they can be
+// reworded here but not added or removed.
+struct OperatorPartnersView: View {
+    @State private var partners: [CloudPartner] = []
+    @State private var problem: String?
+    @State private var editing: CloudPartner?
+
+    var body: some View {
+        OperatorList(
+            title: "Ministry partners",
+            emptyText: "No partners found. Pull down to try again.",
+            items: $partners,
+            problem: $problem,
+            canReorder: false,
+            onAdd: nil,
+            onMove: { _ in },
+            onOpen: { editing = $0 },
+            load: load,
+            onDelete: nil
+        ) { partner in
+            VStack(alignment: .leading, spacing: 2) {
+                Text(partner.name).font(.headline)
+                Text(partner.tagline)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.muted)
+                    .lineLimit(2)
+            }
+            .foregroundStyle(Theme.foreground)
+        }
+        .sheet(item: $editing) { partner in
+            PartnerForm(original: partner, onDone: load)
+        }
+    }
+
+    private func load() async {
+        do {
+            partners = try await OperatorService.allPartners()
+            problem = nil
+        } catch {
+            problem = error.localizedDescription
+        }
+    }
+}
+
+private struct PartnerForm: View {
+    let original: CloudPartner
+    let onDone: () async -> Void
+
+    @State private var partner: CloudPartner
+    /// The key facts as typed: one on each line.
+    @State private var facts: String
+    @State private var logos: [String]
+
+    init(original: CloudPartner, onDone: @escaping () async -> Void) {
+        self.original = original
+        self.onDone = onDone
+        _partner = State(initialValue: original)
+        _facts = State(initialValue: original.keyFacts.joined(separator: "\n"))
+        _logos = State(initialValue: original.logoUrl.map { [$0] } ?? [])
+    }
+
+    private var edited: CloudPartner {
+        var copy = partner
+        copy.keyFacts = facts
+            .split(separator: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        copy.websiteUrl = partner.websiteUrl.trimmingCharacters(in: .whitespaces)
+        copy.donateUrl = partner.donateUrl.trimmingCharacters(in: .whitespaces)
+        copy.logoUrl = logos.first
+        return copy
+    }
+
+    /// Both links must be proper secure web addresses, or people would tap
+    /// Donate and nothing would open.
+    private var linksAreValid: Bool {
+        AppLinks.webURL(edited.websiteUrl) != nil && AppLinks.webURL(edited.donateUrl) != nil
+    }
+
+    var body: some View {
+        EditSheet(
+            title: "Edit partner",
+            hasChanges: edited != original,
+            canSave: !partner.name.trimmingCharacters(in: .whitespaces).isEmpty && linksAreValid,
+            canDelete: false,
+            save: {
+                try await OperatorService.save(edited)
+                await CloudContent.shared.loadPartners()
+                await onDone()
+            },
+            delete: {}
+        ) {
+            LabeledField(label: "Name", text: $partner.name, capitalization: .words)
+            LabeledField(label: "One-line summary", text: $partner.tagline, multiline: true)
+            LabeledField(label: "About", text: $partner.about, multiline: true)
+            LabeledField(label: "Key facts (one on each line)", text: $facts, multiline: true)
+            LabeledField(label: "Their calling", text: $partner.faithNote, multiline: true)
+            LabeledField(label: "Website", text: $partner.websiteUrl, prompt: "https://…", keyboard: .URL, capitalization: .never)
+            LabeledField(label: "Donation page", text: $partner.donateUrl, prompt: "https://…", keyboard: .URL, capitalization: .never)
+            if !linksAreValid {
+                Text("Both links need to be full web addresses starting with https://")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.muted)
+            }
+            Text("The Donate button opens the donation page in Safari. Check it by tapping it after you save.")
+                .font(.footnote)
+                .foregroundStyle(Theme.muted)
+            PhotoUploader(folder: "partners", limit: 1, addresses: $logos)
         }
     }
 }

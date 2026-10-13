@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 // The one place every screen asks for data.
 // Screens never read the JSON files themselves. When the data later moves to
@@ -33,10 +34,15 @@ struct Totals: Hashable {
     let includesSampleData: Bool
 }
 
+@Observable
 final class DataStore {
     static let shared = DataStore()
 
-    let partners: [Partner]
+    /// The partners as shown: the built-in ones, with any edits the team has
+    /// made online laid over the top.
+    private(set) var partners: [Partner]
+    /// The partners exactly as built into the app.
+    private let builtInPartners: [Partner]
     let communities: [Community]
     let company: CompanyTotals
     private let allStories: [StoryUpdate]
@@ -50,7 +56,8 @@ final class DataStore {
     let globeMessages: [String]
 
     private init() {
-        partners = Self.load("partners")
+        builtInPartners = Self.load("partners")
+        partners = builtInPartners
         communities = Self.load("communities")
         allStories = Self.load("stories")
         bottles = Self.load("bottles")
@@ -76,6 +83,33 @@ final class DataStore {
     }
 
     // MARK: Partners
+
+    /// Lays the team's online edits over the built-in partners. A field left
+    /// empty online keeps its built-in wording, so nothing can go blank.
+    func apply(_ edits: [CloudPartner]) {
+        partners = builtInPartners.map { original in
+            guard let edit = edits.first(where: { $0.id == original.id }) else { return original }
+            var partner = original
+            func filled(_ text: String) -> String? {
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                return trimmed.isEmpty ? nil : trimmed
+            }
+            partner.name = filled(edit.name) ?? original.name
+            partner.tagline = filled(edit.tagline) ?? original.tagline
+            partner.about = filled(edit.about) ?? original.about
+            partner.faithStatement = filled(edit.faithNote) ?? original.faithStatement
+            partner.website = filled(edit.websiteUrl) ?? original.website
+            let facts = edit.keyFacts.compactMap(filled)
+            if !facts.isEmpty { partner.keyFacts = facts }
+            if let donate = filled(edit.donateUrl), donate != original.donateUrl {
+                // The team typed a donation page themselves, so it counts as checked.
+                partner.donateUrl = donate
+                partner.donateUrlConfirmed = true
+            }
+            partner.logoUrl = edit.logoUrl.flatMap(filled)
+            return partner
+        }
+    }
 
     func partner(id: String) -> Partner? {
         partners.first { $0.id == id }

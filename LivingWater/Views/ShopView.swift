@@ -18,9 +18,14 @@ struct ShopView: View {
         PageScroll {
             VStack(alignment: .leading, spacing: 8) {
                 PageTitle("Shop")
-                Text("Every purchase helps bring clean water to communities in need.")
-                    .font(.title3)
-                    .foregroundStyle(Theme.muted)
+                EditableText(
+                    key: "shop_intro",
+                    fallback: "Every purchase helps bring clean water to communities in need.",
+                    name: "Shop introduction"
+                )
+                .font(.title3)
+                .foregroundStyle(Theme.muted)
+                EditShortcut(title: "Edit products", route: .operatorProducts)
             }
 
             if shop.products.isEmpty {

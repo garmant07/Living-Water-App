@@ -269,6 +269,22 @@ create policy "public images delete operators" on storage.objects
   for delete using (bucket_id = 'public-images' and public.is_operator());
 
 -- ---------------------------------------------------------------------------
+-- JOURNEY: the bottles a signed-in person has saved, so their Journey
+-- follows them to a new phone. Each person can see and change only their own.
+-- ---------------------------------------------------------------------------
+create table if not exists public.saved_bottles (
+  user_id uuid not null references auth.users on delete cascade,
+  code text not null check (char_length(code) between 1 and 40),
+  saved_at timestamptz not null default now(),
+  primary key (user_id, code)
+);
+
+alter table public.saved_bottles enable row level security;
+drop policy if exists "saved bottles own" on public.saved_bottles;
+create policy "saved bottles own" on public.saved_bottles
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ---------------------------------------------------------------------------
 -- To make an account an operator, run this in the SQL Editor with the
 -- person's email address:
 --

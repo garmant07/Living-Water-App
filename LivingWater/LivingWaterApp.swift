@@ -19,6 +19,7 @@ enum AppRoute: Hashable {
     case operatorOrder(Order)
     case operatorMessages
     case operatorStories
+    case operatorPartners
 }
 
 /// Keeps track of which pages are open, so any screen can open another
@@ -44,6 +45,7 @@ struct LivingWaterApp: App {
 
     var body: some Scene {
         WindowGroup {
+            VStack(spacing: 0) {
             NavigationStack(path: Bindable(router).path) {
                 HomeView()
                     .navigationDestination(for: Page.self) { page in
@@ -71,6 +73,7 @@ struct LivingWaterApp: App {
                         case .operatorOrder(let order): OperatorOrderView(order: order)
                         case .operatorMessages: OperatorMessagesView()
                         case .operatorStories: OperatorStoriesView()
+                        case .operatorPartners: OperatorPartnersView()
                         }
                     }
                     .navigationDestination(for: Community.self) { community in
@@ -86,7 +89,29 @@ struct LivingWaterApp: App {
                         BottleView(code: route.code)
                     }
             }
+            // While an operator has Edit Mode on, a bar across the bottom says so.
+            if CloudContent.shared.isEditing && AuthStore.shared.isOperator {
+                EditModeBar()
+            }
+            }
+            .background(Theme.background)
             .environment(router)
+            // Links in confirmation and password-reset emails open the app here.
+            .onOpenURL { link in
+                Task { await AuthStore.shared.open(link) }
+            }
+            .sheet(isPresented: Bindable(AuthStore.shared).needsNewPassword) {
+                NewPasswordSheet()
+            }
+            .alert(
+                AuthStore.shared.linkNotice ?? "",
+                isPresented: Binding(
+                    get: { AuthStore.shared.linkNotice != nil },
+                    set: { if !$0 { AuthStore.shared.linkNotice = nil } }
+                )
+            ) {
+                Button("OK") {}
+            }
             .tint(Theme.brand)
             // The whole app is white text on blue, so system bars use their dark look.
             .preferredColorScheme(.dark)
@@ -106,8 +131,11 @@ struct LivingWaterApp: App {
                 case "product": router.path.append(AppRoute.product(ShopProduct.samples[1]))
                 case "operator": router.path.append(AppRoute.operatorHome)
                 case "operatorProducts": router.path.append(AppRoute.operatorProducts)
+                case "operatorPartners": router.path.append(AppRoute.operatorPartners)
                 default: break
                 }
+                // For testing: "-previewEditing YES" turns Edit Mode on (with -previewOperator YES).
+                if UserDefaults.standard.bool(forKey: "previewEditing") { CloudContent.shared.isEditing = true }
                 #endif
             }
         }

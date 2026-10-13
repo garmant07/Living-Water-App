@@ -186,6 +186,7 @@
 				DEVELOPMENT_TEAM = SNB4Z68T65;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LivingWaterInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Living Water";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Living Water uses the camera to scan the QR code on your bottle.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Living Water uses your approximate location only to show the clean water work closest to you. It stays on your phone.";
@@ -215,6 +216,7 @@
 				DEVELOPMENT_TEAM = SNB4Z68T65;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = LivingWaterInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Living Water";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Living Water uses the camera to scan the QR code on your bottle.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Living Water uses your approximate location only to show the clean water work closest to you. It stays on your phone.";

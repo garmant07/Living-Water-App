@@ -4,7 +4,7 @@ import Supabase
 import UIKit
 
 // Content that operators can change without a new app version: the home page
-// verses and the community stories. Loaded when the app opens and remembered
+// verses, the community stories, the partners' wording and short page texts. Loaded when the app opens and remembered
 // on the phone. Until Supabase is connected, the app's built-in content is used.
 
 @MainActor
@@ -16,9 +16,21 @@ final class CloudContent {
     private(set) var homeMessages: [HomeMessage]?
     private(set) var stories: [CommunityStory] = []
     private(set) var storiesFailed = false
+    /// Short page texts the team has changed, by key. See `text(_:fallback:)`.
+    private(set) var blocks: [String: String] = [:]
+
+    /// On while an operator is changing the app's words from the pages
+    /// themselves. It only shows the pencils; the database decides who can save.
+    var isEditing = false
 
     private init() {
         guard Backend.isConfigured else { return }
+        if let saved: [ContentBlock] = DiskCache.load("blocks") {
+            blocks = Dictionary(saved.map { ($0.key, $0.text) }, uniquingKeysWith: { $1 })
+        }
+        if let saved: [CloudPartner] = DiskCache.load("partners") {
+            DataStore.shared.apply(saved)
+        }
         if let saved: [CloudMessage] = DiskCache.load("messages"), !saved.isEmpty {
             homeMessages = saved.map(\.asHomeMessage)
         }
@@ -28,6 +40,33 @@ final class CloudContent {
     func load() async {
         await loadMessages()
         await loadStories()
+        await loadBlocks()
+        await loadPartners()
+    }
+
+    /// The team's wording for a piece of page text, or the built-in wording
+    /// when they haven't changed it.
+    func text(_ key: String, fallback: String) -> String {
+        guard let text = blocks[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
+            return fallback
+        }
+        return text
+    }
+
+    func loadBlocks() async {
+        guard let client = Backend.client else { return }
+        if let rows: [ContentBlock] = try? await client.from("content_blocks").select("key, text").execute().value {
+            blocks = Dictionary(rows.map { ($0.key, $0.text) }, uniquingKeysWith: { $1 })
+            DiskCache.save(rows, as: "blocks")
+        }
+    }
+
+    func loadPartners() async {
+        guard let client = Backend.client else { return }
+        if let rows: [CloudPartner] = try? await client.from("partners").select().execute().value {
+            DataStore.shared.apply(rows)
+            DiskCache.save(rows, as: "partners")
+        }
     }
 
     func loadMessages() async {

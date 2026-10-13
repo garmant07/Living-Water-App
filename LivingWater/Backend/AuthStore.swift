@@ -29,6 +29,19 @@ final class AuthStore {
 
     var displayName: String { profile?.displayName ?? "" }
 
+    /// true after someone taps the link in a password-reset email. The app
+    /// then asks them for a new password.
+    var needsNewPassword = false
+    /// A short message to show after an emailed link opens the app.
+    var linkNotice: String?
+
+    /// Where emailed links send people: back into this app. The address must
+    /// also be allowed in Supabase (Authentication > URL Configuration >
+    /// Redirect URLs: livingwater://**). Until it is, the links fall back to
+    /// Supabase's default page and the app carries on as before.
+    private static let confirmLink = URL(string: "livingwater://auth/confirm")!
+    private static let resetLink = URL(string: "livingwater://auth/reset")!
+
     private init() {}
 
     /// Keeps this store in step with Supabase for as long as the app runs.
@@ -40,9 +53,46 @@ final class AuthStore {
             email = user?.email
             if let user {
                 await loadProfile(for: user.id)
+                if change.event == .initialSession || change.event == .signedIn {
+                    await JourneySync.refresh(for: user.id)
+                }
             } else {
                 profile = nil
+                if change.event == .signedOut {
+                    CloudContent.shared.isEditing = false
+                    JourneyStore.shared.forgetAccount()
+                }
             }
+        }
+    }
+
+    /// Handles a link from a confirmation or password-reset email.
+    func open(_ link: URL) async {
+        guard let client = Backend.client, link.scheme == "livingwater", link.host() == "auth" else { return }
+        let isReset = link.path().hasPrefix("/reset")
+        do {
+            try await client.auth.session(from: link)
+            if isReset {
+                needsNewPassword = true
+            } else {
+                linkNotice = "Your email is confirmed and you're signed in."
+            }
+        } catch {
+            // The link was opened on a different phone from the one that asked
+            // for it, or it has already been used.
+            linkNotice = isReset
+                ? "That reset link has expired or was already used. Ask for a new one from the sign-in page."
+                : "Your email is confirmed. Sign in with your email and password."
+        }
+    }
+
+    func setNewPassword(_ password: String) async throws {
+        guard let client = Backend.client else { throw FriendlyError.notConnected }
+        do {
+            try await client.auth.update(user: UserAttributes(password: password))
+            needsNewPassword = false
+        } catch {
+            throw FriendlyError(message: "We couldn't save the new password. Use at least 8 characters and try again.")
         }
     }
 
@@ -67,7 +117,8 @@ final class AuthStore {
             let response = try await client.auth.signUp(
                 email: email,
                 password: password,
-                data: ["display_name": .string(name)]
+                data: ["display_name": .string(name)],
+                redirectTo: Self.confirmLink
             )
             return response.session == nil
         } catch {
@@ -78,7 +129,7 @@ final class AuthStore {
     func sendPasswordReset(to email: String) async throws {
         guard let client = Backend.client else { throw FriendlyError.notConnected }
         do {
-            try await client.auth.resetPasswordForEmail(email)
+            try await client.auth.resetPasswordForEmail(email, redirectTo: Self.resetLink)
         } catch {
             throw FriendlyError(message: "We couldn't send the reset email. Check the address and try again.")
         }

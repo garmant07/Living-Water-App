@@ -228,6 +228,7 @@ struct HomeView: View {
     @ViewBuilder
     private var doors: some View {
         VStack(spacing: 10) {
+            EditShortcut(title: "Edit the verses", route: .operatorMessages)
             donateDoor
             if usesLargeText {
                 hubDoor

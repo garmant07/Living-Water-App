@@ -179,3 +179,43 @@ struct CloudMessage: Codable, Identifiable, Hashable {
         HomeMessage(kind: HomeMessage.Kind(rawValue: kind) ?? .slogan, text: text, reference: reference)
     }
 }
+
+/// The parts of a ministry partner the team can change online. The rest of a
+/// partner (its countries, projects and published figures) stays in the app.
+struct CloudPartner: Codable, Identifiable, Hashable {
+    var id: String
+    var name: String
+    var tagline: String
+    var about: String
+    var keyFacts: [String]
+    var faithNote: String
+    var logoUrl: String?
+    var websiteUrl: String
+    var donateUrl: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, tagline, about
+        case keyFacts = "key_facts"
+        case faithNote = "faith_note"
+        case logoUrl = "logo_url"
+        case websiteUrl = "website_url"
+        case donateUrl = "donate_url"
+    }
+}
+
+/// One piece of page text the team can change online, looked up by its key.
+struct ContentBlock: Codable, Hashable {
+    let key: String
+    var text: String
+}
+
+/// A bottle saved to a signed-in person's Journey, as stored online.
+struct CloudBottle: Codable, Hashable {
+    let code: String
+    let savedAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case code
+        case savedAt = "saved_at"
+    }
+}

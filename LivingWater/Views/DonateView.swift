@@ -16,9 +16,14 @@ struct DonateView: View {
                         .font(.largeTitle.weight(.semibold))
                         .foregroundStyle(Theme.foreground)
                         .accessibilityAddTraits(.isHeader)
-                    Text("Every one of our partners is putting clean water in the hands of people who need it. Give directly to the ministry that moves you.")
-                        .font(.title3)
-                        .foregroundStyle(Theme.muted)
+                    EditableText(
+                        key: "donate_intro",
+                        fallback: "Every one of our partners is putting clean water in the hands of people who need it. Give directly to the ministry that moves you.",
+                        name: "Donate introduction"
+                    )
+                    .font(.title3)
+                    .foregroundStyle(Theme.muted)
+                    EditShortcut(title: "Edit partners", route: .operatorPartners)
                 }
 
                 VStack(spacing: 12) {
@@ -33,7 +38,11 @@ struct DonateView: View {
                     }
                 }
 
-                Text("Living Water never takes or handles your gift. You give on the partner's own website.")
+                EditableText(
+                    key: "donate_note",
+                    fallback: "Living Water never takes or handles your gift. You give on the partner's own website.",
+                    name: "Donate footnote"
+                )
                     .font(.footnote)
                     .foregroundStyle(Theme.muted)
             }
@@ -97,24 +106,37 @@ struct PartnerLogo: View {
 
     var body: some View {
         Group {
-            if let logo = partner.logo, UIImage(named: logo) != nil {
+            if let url = partner.logoUrl.flatMap(AppLinks.webURL) {
+                // A logo the team uploaded. The initials show while it loads.
+                AsyncImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().scaledToFit()
+                    } else {
+                        initialsCircle
+                    }
+                }
+            } else if let logo = partner.logo, UIImage(named: logo) != nil {
                 Image(logo)
                     .resizable()
                     .scaledToFit()
             } else {
                 // PLACEHOLDER until the partner supplies a logo.
-                Circle()
-                    .fill(Theme.deep)
-                    .overlay(
-                        Text(initials)
-                            .font(.system(size: size * 0.34, weight: .bold))
-                            .foregroundStyle(Theme.foreground)
-                    )
-                    .overlay(Circle().stroke(Theme.border))
+                initialsCircle
             }
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+
+    private var initialsCircle: some View {
+        Circle()
+            .fill(Theme.deep)
+            .overlay(
+                Text(initials)
+                    .font(.system(size: size * 0.34, weight: .bold))
+                    .foregroundStyle(Theme.foreground)
+            )
+            .overlay(Circle().stroke(Theme.border))
     }
 }
 

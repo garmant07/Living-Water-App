@@ -53,6 +53,7 @@ struct DonatePartnerView: View {
             Text(partner.tagline)
                 .font(.title3)
                 .foregroundStyle(Theme.muted)
+            EditShortcut(title: "Edit partners", route: .operatorPartners)
         }
     }
 
