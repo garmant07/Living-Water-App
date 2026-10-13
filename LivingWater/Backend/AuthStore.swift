@@ -103,7 +103,11 @@ final class AuthStore {
     func deleteAccount() async throws {
         guard let client = Backend.client else { throw FriendlyError.notConnected }
         do {
-            try await client.functions.invoke("delete-account")
+            // On Supabase this function's web address is "clever-handler" (the name
+            // the editor made up when it was uploaded). Its code is
+            // supabase/functions/delete-account. If it is ever uploaded again under
+            // the address "delete-account", change the name here to match.
+            try await client.functions.invoke("clever-handler")
         } catch {
             throw FriendlyError(message: "We couldn't delete the account just now. Please try again.")
         }
