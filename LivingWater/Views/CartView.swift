@@ -229,7 +229,7 @@ struct CheckoutView: View {
         defer { isWorking = false }
 
         let request = CheckoutRequest(
-            items: cart.lines.map { .init(productId: $0.product.id, quantity: $0.quantity) },
+            items: cart.lines.map { .init(productId: $0.product.id.uuidString.lowercased(), quantity: $0.quantity) },
             shipping: address,
             contactEmail: email.trimmingCharacters(in: .whitespaces),
             contactPhone: phone.isEmpty ? nil : phone

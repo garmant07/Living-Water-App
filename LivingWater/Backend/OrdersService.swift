@@ -7,7 +7,9 @@ import Supabase
 /// the server looks them up itself.
 struct CheckoutRequest: Encodable {
     struct Item: Encodable {
-        let productId: UUID
+        /// Sent in lowercase, the way the database writes ids. Swift writes
+        /// them in capitals, and the server compares them letter for letter.
+        let productId: String
         let quantity: Int
         enum CodingKeys: String, CodingKey {
             case quantity

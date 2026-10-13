@@ -50,7 +50,9 @@ Deno.serve(async (req) => {
     if (!user) return reply(401, { error: "Please sign in to check out." });
 
     const body = await req.json();
-    const items: { product_id: string; quantity: number }[] = body.items ?? [];
+    // Ids are compared in lowercase: iPhones send them in capitals, the database stores lowercase.
+    const items: { product_id: string; quantity: number }[] = (Array.isArray(body.items) ? body.items : [])
+      .map((i: { product_id: unknown; quantity: number }) => ({ ...i, product_id: String(i.product_id ?? "").toLowerCase() }));
     const shipping = body.shipping ?? {};
     if (!Array.isArray(items) || items.length === 0) return reply(400, { error: "Your cart is empty." });
     for (const field of ["name", "line1", "city", "state", "postal_code", "country"]) {
